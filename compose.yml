@@ -3,7 +3,7 @@ services:
     platform: linux/amd64
     build: .
     ports:
-      - "7000:80"
+      - "9111:80"
     volumes:
       - ./public_html:/home/ubuntu/public_html
       - ./tukubai:/home/TOOL
