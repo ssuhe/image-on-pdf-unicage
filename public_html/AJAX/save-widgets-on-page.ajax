@@ -28,6 +28,8 @@ fi
 uploadDate=$(self 3 $tmp-existing)
 baseDir=$inpd/$uploadDate/PDF_LIST/$id/WIDGETS/page-$pageNo
 
+ucat $baseDir/SVG > $baseDir/SVG.$todayhms-$$
+
 mkdir -p $baseDir
 itouch 0 $baseDir/NO
 

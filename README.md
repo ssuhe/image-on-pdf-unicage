@@ -2,7 +2,8 @@
 ### requirement:
 	1) tukubai   => place tukubai on root directory ./tukubai
 	2) .htaccess => setup .htaccess your own public_html path on web. (default /home/ubuntu/public_html)
-	3) Docker
+	3) poppler-utils
+	4) Docker
 ### start
 ```bash
 docker compose up -d
@@ -21,3 +22,4 @@ docker exec -it <container-name> bash
 	3) create public_html's symbolic link on your public directory
 	4) create virtualenv with python on the AJAX directory
 	5) install packages: PyPDF2, pillow, reportlab
+	6) poppler-utils: apt install poppler-utils
