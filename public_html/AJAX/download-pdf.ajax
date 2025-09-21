@@ -1,0 +1,25 @@
+#!/bin/bash
+source ../SHELL/common
+
+echo "$QUERY_STRING" |
+cgi-name -s_ -n_ -e_ |
+cat                  > $tmp-query
+
+id=$(nameread id $tmp-query)
+read uploadedDate pages <<< "$(
+    ucat $inpd/PDF_LIST |
+    selr 1 $id |
+    self 3 4
+)"
+
+./venv/bin/python ./place-image-on-pdf.py "$inpd/$uploadedDate/PDF_LIST/$id" $pages $tmp-output-pdf >&2
+
+pdfunite $tmp-output-pdf-*.pdf $tmp-output.pdf
+
+echo "Content-type:application/pdf"
+echo
+cat $tmp-output.pdf
+
+
+rm -rf $tmp-*
+exit 0

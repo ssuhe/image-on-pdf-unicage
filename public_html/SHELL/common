@@ -1,0 +1,32 @@
+export PATH=/home/UTL:/home/TOOL:$PATH
+
+appd=/home/ubuntu/public_html
+logd=$appd/LOG
+sysd=$appd/SYS
+shld=$appd/SHELL
+inpd=$appd/INPUT
+
+tmp=/tmp/tmp-$$
+today=$(date +%Y%m%d)
+todayhms=$(date +%Y%m%d%H%M%S)
+
+ERROR_HANDLER() {
+	local status=${PIPESTATUS[@]}
+	local lineno=${BASH_LINENO[0]}
+
+	echo "Content-type:text/plain"
+	echo "Status: ${1:-500}"
+	echo
+	echo "${2:-ERROR}"
+
+	rm -rf $tmp-*
+	exit 1
+}
+
+set -o pipefail
+set -e
+trap ERROR_HANDLER ERR
+
+# exec 2> $logd/LOG.$(basename $0).$todayhms-$$
+exec 2> $logd/LOG.$(basename $0).$today
+set -vx

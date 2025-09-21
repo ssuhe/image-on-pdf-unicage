@@ -1,0 +1,59 @@
+#!/bin/bash -vx
+source ../SHELL/common
+
+touch $tmp-name
+if [ "$REQUEST_METHOD" == "POST" ] && [ ! -z "$CONTENT_LENGTH" ] && [ "$CONTENT_LENGTH" != 0 ];then
+	dd bs=$CONTENT_LENGTH |
+	cgi-name -s_ -n_ -e_  |
+	cat                   > $tmp-name
+fi
+
+page=$(nameread page $tmp-name | itouch "1" -)
+size=$(nameread size $tmp-name | itouch "100" -)
+
+ucat $appd/pdf-demo.html             |
+sed -n '/###rows###/,/###rows###/'p  |
+sed -e '1d' -e '$d'                  |
+cat                                  > $tmp-html
+
+ucat $inpd/PDF_LIST > $tmp-data
+
+totalSize=$(gyo $tmp-data)
+totalPage=$(echo $size $totalSize | lcalc 'age($2/$1,0)')
+
+if [ "$totalPage" -lt "$page" ];then
+	page=1
+fi
+
+r1=$(((page-1)*size+1))
+r2=$((page*size))
+
+cat $tmp-data                |
+juni                         |
+cond '$1ge'$r1'&&$1le'$r2''  |
+delf 1                       |
+dayslash --output yyyy/mm/dd_HH:MM:SS 6 |
+cat                          > $tmp-result
+
+visibleSize=$(gyo $tmp-result)
+
+cat $tmp-html                                 |
+if [ -s $tmp-result ];then
+	mojihame -l'###list###' - $tmp-result |
+	mojihame -l'###empty###' - <(:)
+else
+	mojihame -l'###empty###' - <(echo 1)  |
+	mojihame -l'###list###' - <(:)
+fi                                            |
+cat                                           > $tmp-output
+
+echo "Content-type:text/plain"
+echo "totalSize:$totalSize"
+echo "visibleSize:$visibleSize"
+echo "totalPage:$totalPage"
+echo "page:$page"
+echo
+cat $tmp-output
+
+rm -rf $tmp-*
+exit 0

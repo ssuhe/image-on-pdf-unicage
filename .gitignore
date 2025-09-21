@@ -1,0 +1,6 @@
+LOG
+.DS_Store
+tukubai
+venv
+public_html/INPUT/*
+*.swp

@@ -1,0 +1,52 @@
+table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+table,
+table td,
+table th {
+  border: 1px solid black;
+}
+table td,
+table th {
+  padding: 0.2rem 0.5rem;
+}
+
+section.hidden {
+  display: none;
+}
+
+#pdf-widgets {
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+
+/* svg {
+      border: 1px solid #333;
+      background: #f9f9f9;
+      width: 800px;
+      height: 500px;
+      cursor: crosshair;
+    } */
+.shape {
+  fill: transparent;
+  stroke: black;
+  stroke-width: 2;
+}
+.arrow {
+  stroke: red;
+  stroke-width: 2;
+  marker-end: url(#arrowhead);
+}
+.selected {
+  outline: 2px dashed red;
+  outline-offset: 3px;
+  /* stroke: blue !important; */
+
+  /* stroke-dasharray: 5; */
+}
+
+iframe {
+  border: 1px solid #ccc;
+}

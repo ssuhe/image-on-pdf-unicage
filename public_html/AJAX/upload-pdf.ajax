@@ -1,0 +1,67 @@
+#!/bin/bash
+source ../SHELL/common
+
+outdir=$inpd/$today/PDF_LIST
+mkdir -p $outdir
+
+dd bs=$CONTENT_LENGTH          |
+tee $outdir/MIME.$todayhms-$$  |
+cat                            > $tmp-mime
+
+cat $tmp-mime         |
+mime-read params      |
+cgi-name -s_ -n_ -e_  |
+cat                   > $tmp-params
+
+count=$(nameread count $tmp-params);
+
+itouch 0 $inpd/PDF_LIST.NO
+
+for ((i=0;i<$count;i++))
+do
+	no=$(getno -u 1 $inpd/PDF_LIST.NO)
+	mkdir -p $outdir/$no
+
+	cat $tmp-mime      |
+	mime-read file-$i  |
+	cat                > $tmp-pdf
+	
+	pdftocairo -pdf $tmp-pdf $outdir/$no/PDF
+	pdfseparate $outdir/$no/PDF $outdir/$no/PDF.%d
+
+	pages="$(
+		pdfinfo $outdir/$no/PDF  |
+		ugrep "Pages:"           |
+		self NF
+	)"
+
+	for ((j=1;j<=$pages;j++))
+	do
+		./venv/bin/python3 ./get-page-size.py $outdir/$no/PDF.$j > $outdir/$no/page-size-$j
+	done
+
+	filename=$(nameread filename-$i $tmp-params)
+	echo "$no $filename $today $pages 1 $todayhms" >> $tmp-lv1-pdf
+done
+
+if ulock $inpd/PDF_LIST.lock ;then
+	ucat $tmp-lv1-pdf > $outdir/LV1.$todayhms-$$
+	ucat $inpd/PDF_LIST > $outdir/LV3.$todayhms-$$
+
+	ucat $tmp-lv1-pdf $inpd/PDF_LIST |
+	msort key=1@NF                   |
+	getlast key=1                    |
+	delr NF-1 9                      |
+	cat                              > $tmp-lv1
+
+	mv $tmp-lv1 $inpd/PDF_LIST
+	rm $inpd/PDF_LIST.lock
+fi
+
+echo "Content-type:text/plain"
+echo "Status: 201"
+echo
+echo ok
+
+rm -rf $tmp-*
+exit 0

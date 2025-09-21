@@ -1,0 +1,67 @@
+#!/bin/bash
+source ../SHELL/common
+
+dd bs=$CONTENT_LENGTH > $tmp-mime
+
+cat $tmp-mime |
+mime-read params |
+cgi-name -s_ -n_ -e_ |
+cat > $tmp-params
+
+id=$(nameread id $tmp-params)
+pageNo=$(nameread page $tmp-params)
+count=$(nameread count $tmp-params)
+
+ucat $inpd/PDF_LIST |
+selr 1 $id |
+cat > $tmp-existing
+
+
+if [ ! -s $tmp-existing ];then
+    echo "Content-type:text/plain"
+    echo
+    echo "存在していないPDFのIDです。"
+    rm -rf $tmp-*
+    exit 1
+fi
+
+uploadDate=$(self 3 $tmp-existing)
+baseDir=$inpd/$uploadDate/PDF_LIST/$id/WIDGETS/page-$pageNo
+
+mkdir -p $baseDir
+itouch 0 $baseDir/NO
+
+cat $tmp-mime |
+mime-read svgContent > $baseDir/SVG
+
+for ((i=0;i<$count;i++))
+do
+    wno=$(getno -u 1 $baseDir/NO)
+    cat $tmp-mime |
+    mime-read widget-$i |
+    cat > $baseDir/$wno.png
+
+    echo "$wno" >> $tmp-lv1
+    nameread widget-$i-x $tmp-params | itouch "_" - >> $tmp-lv1
+    nameread widget-$i-y $tmp-params | itouch "_" - >> $tmp-lv1
+    nameread widget-$i-w $tmp-params | itouch "_" - >> $tmp-lv1
+    nameread widget-$i-h $tmp-params | itouch "_" - >> $tmp-lv1
+
+    cat $tmp-lv1 | yarr >> $tmp-lv1~
+    rm $tmp-lv1
+
+done
+
+if ulock $baseDir/WIDGETS-POSITION.lock ;then
+    mv $tmp-lv1~ $baseDir/WIDGETS-POSITION
+    rm -rf $baseDir/WIDGETS-POSITION.lock
+fi
+
+
+echo "Content-type:text/plain"
+echo "Status:201"
+echo
+echo ok
+
+rm -rf $tmp-*
+exit 0

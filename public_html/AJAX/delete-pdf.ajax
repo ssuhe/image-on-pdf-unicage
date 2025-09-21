@@ -1,0 +1,39 @@
+#!/bin/bash
+source ../SHELL/common
+
+outdir=$inpd/$today/PDF_LIST
+mkdir -p $outdir
+
+echo "$QUERY_STRING" |
+cgi-name -s_ -n_ -e_ |
+cat                  > $tmp-name
+
+id=$(nameread id $tmp-name | itouch "_" -)
+
+ucat $inpd/PDF_LIST              |
+selr 1 $id                       |
+strcat 1/NF-2 \""9 $todayhms"\"  |
+tee $outdir/LV1.$todayhms-$$     |
+cat                              > $tmp-deleted-pdf
+
+if ulock $inpd/PDF_LIST.lock ;then
+	ucat $inpd/PDF_LIST > $outdir/LV3.$todayhms-$$
+
+	ucat $tmp-deleted-pdf $inpd/PDF_LIST  |
+	msort key=1@NF                        |
+	getlast key=1                         |
+	delr NF-1 9                           |
+	cat                                   > $tmp-lv1
+
+	mv $tmp-lv1 $inpd/PDF_LIST
+
+	rm $inpd/PDF_LIST.lock
+fi
+
+
+echo "Content-type:text/plain"
+echo "Status: 204"
+echo
+
+rm -rf $tmp-*
+exit 0

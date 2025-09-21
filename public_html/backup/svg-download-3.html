@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SVG High-Res PNG Export</title>
+  </head>
+  <body>
+    <!-- <svg id="mysvg" width="206" height="143" viewBox="0 0 206 143">
+      <rect
+        xmlns="http://www.w3.org/2000/svg"
+        x="182"
+        y="43.25"
+        width="206"
+        height="143"
+        stroke="black"
+        fill="rgba(0,0,0,0)"
+        stroke-width="2"
+      />
+    </svg> -->
+
+    <svg width="179" height="96" viewBox="0 0 179 96">
+      <rect
+        xmlns="http://www.w3.org/2000/svg"
+        width="179"
+        height="96"
+        stroke="black"
+        fill="rgba(188, 32, 32, 0.58)"
+        stroke-width="2"
+        class="selected"
+      />
+    </svg>
+
+    <!-- <svg width="100" height="200" viewBox="0 0 100 200">
+      <rect x="0" y="0" width="100" height="200" fill="#4caf50" />
+      <text x="50" y="100" font-size="20" text-anchor="middle" fill="white">
+        SVG
+      </text>
+    </svg> -->
+
+    <button id="save">Save Hi-Res PNG</button>
+
+    <script>
+      document.getElementById("save").addEventListener("click", async () => {
+        const svgEl = document.querySelector("svg");
+        const xml = new XMLSerializer().serializeToString(svgEl);
+        const svg64 =
+          "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+
+        
+          console.log(svg64)
+          
+        const img = new Image();
+        img.src = svg64;
+        await img.decode();
+
+        const w = svgEl.getAttribute("width"); // logical width (px/pt)
+        const h = svgEl.getAttribute("height"); // logical height (px/pt)
+        const scale = 4; // render 4x bigger internally → 400x800 px PNG
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w * scale;
+        canvas.height = h * scale;
+
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(scale, 0, 0, scale, 0, 0); // scale everything
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const a = document.createElement("a");
+        a.download = "output-hires.png";
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+      });
+    </script>
+  </body>
+</html>

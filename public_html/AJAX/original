@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+"""
+Usage:
+    python3 ouin <pdf-file> [date] [copy_number]
+
+Example:
+    python3 ouin input.pdf
+    python3 ouin input.pdf 2025-09-12 12345
+"""
+
+import os
+import sys
+import datetime
+from io import BytesIO
+
+from PIL import Image, ImageDraw, ImageFont
+from PyPDF2 import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+
+# ================================
+# Constants
+# ================================
+
+PARENT_PID = os.getppid()
+TEMP_PNG_PATH = f"/tmp/tmp_{PARENT_PID}-stamp.png"
+TEMP_OUTPUT_PDF = f"/tmp/tmp_{PARENT_PID}-output.pdf"
+CM_TO_POINTS = 28.35  # Conversion: 1 cm = 28.35 pt
+
+# ================================
+# Functions
+# ================================
+
+def create_stamp_image(date_text: str, copy_number: str) -> tuple[int, int]:
+    """
+    Create a PNG stamp image containing text with a red border.
+    Returns the stamp image width and height.
+    """
+
+    # Colors
+    red_color = (200, 0, 0, 255)
+    transparent_background = (255, 255, 255, 0)
+
+    # Padding
+    padding_x = 20
+    padding_y = 10
+
+    # Stamp text
+    text = f"{date_text} COPYNO.{copy_number}"
+
+    # Dummy image for measuring text size
+    dummy_image = Image.new("RGB", (1, 1))
+    dummy_draw = ImageDraw.Draw(dummy_image)
+
+    # Load font
+    try:
+        font = ImageFont.truetype("NotoSansCJK-Regular.ttc", 20)
+    except Exception:
+        font = ImageFont.load_default()
+
+    # Measure text bounding box
+    text_box = dummy_draw.textbbox((padding_x, padding_y), text, font=font)
+    x0, y0, x1, y1 = text_box
+
+    # Expand bounding box with padding
+    x0 -= padding_x
+    x1 += padding_x
+    y0 -= padding_y
+    y1 += padding_y
+
+    # Calculate final stamp size
+    stamp_width = (x1 - x0) + padding_x * 2
+    stamp_height = (y1 - y0) + padding_y * 2
+
+    print(f"Stamp image size: {stamp_width}x{stamp_height}", file=sys.stderr)
+
+    # Create stamp image with transparent background
+    stamp_image = Image.new("RGBA", (stamp_width, stamp_height), transparent_background)
+    stamp_draw = ImageDraw.Draw(stamp_image)
+
+    # Draw border and text
+    stamp_draw.rectangle([x0, y0, x1, y1], outline=red_color, width=3)
+    stamp_draw.text((x0 + padding_x, y0 + padding_y), text, font=font, fill=red_color)
+
+    # Save PNG
+    stamp_image.save(TEMP_PNG_PATH, "PNG")
+
+    return stamp_width, stamp_height
+
+
+def get_page_size(page) -> tuple[float, float]:
+    """
+    Get width and height of a PDF page in points.
+    """
+    box = page.mediabox
+    width = float(box.right) - float(box.left)
+    height = float(box.top) - float(box.bottom)
+    return width, height
+
+
+def add_stamp_to_pdf(input_pdf: str, output_pdf: str, stamp_path: str, stamp_w: int, stamp_h: int) -> None:
+    """
+    Overlay the PNG stamp onto all pages of a PDF.
+    """
+    # Target stamp height on PDF page
+    target_height = 30
+    target_width = int(stamp_w / stamp_h * target_height)
+
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
+
+    for page_number, page in enumerate(reader.pages, start=1):
+        page_width, page_height = get_page_size(page)
+
+        # Create temporary overlay PDF with the stamp
+        packet = BytesIO()
+        can = canvas.Canvas(packet, pagesize=(page_width, page_height))
+        can.drawImage(
+            stamp_path,
+            x=page_width - target_width,
+            y=page_height - target_height,
+            width=target_width,
+            height=target_height,
+            mask="auto",  # keep transparent background
+        )
+        can.save()
+
+        # Merge overlay into original page
+        packet.seek(0)
+        overlay_pdf = PdfReader(packet)
+        page.merge_page(overlay_pdf.pages[0])
+        writer.add_page(page)
+
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
+
+    print(f"{output_pdf}")
+
+
+# ================================
+# Main
+# ================================
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python3 test002.py <pdf-file> [date] [copy_number]")
+        sys.exit(1)
+
+    input_pdf = sys.argv[1]
+
+    # Optional arguments
+    try:
+        date_text = sys.argv[2]
+    except IndexError:
+        date_text = datetime.date.today().strftime("%Y-%m-%d")
+
+    try:
+        copy_number = sys.argv[3]
+    except IndexError:
+        copy_number = ""
+
+    # Create stamp and overlay onto PDF
+    stamp_w, stamp_h = create_stamp_image(date_text, copy_number)
+    add_stamp_to_pdf(input_pdf, TEMP_OUTPUT_PDF, TEMP_PNG_PATH, stamp_w, stamp_h)
+
+
+if __name__ == "__main__":
+    main()
+

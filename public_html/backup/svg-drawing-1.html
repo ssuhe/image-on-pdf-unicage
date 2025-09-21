@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SVG Drawing Tool</title>
+  <style>
+    body { font-family: sans-serif; }
+    #toolbar {
+      margin-bottom: 10px;
+    }
+    button {
+      margin-right: 5px;
+      padding: 5px 10px;
+    }
+    svg {
+      border: 1px solid #333;
+      background: #f9f9f9;
+      width: 800px;
+      height: 500px;
+      cursor: crosshair;
+    }
+    .shape {
+      fill: transparent;
+      stroke: black;
+      stroke-width: 2;
+    }
+    .arrow {
+      stroke: red;
+      stroke-width: 2;
+      marker-end: url(#arrowhead);
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button onclick="setTool('rect')">Rectangle</button>
+    <button onclick="setTool('ellipse')">Oval</button>
+    <button onclick="setTool('line')">Line</button>
+    <button onclick="setTool('arrow')">Arrow</button>
+  </div>
+
+  <svg id="canvas">
+    <!-- Arrow marker definition -->
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="red"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <script>
+    const svg = document.getElementById("canvas");
+    let currentTool = "rect";
+    let drawing = false;
+    let startX, startY;
+    let shape;
+
+    function setTool(tool) {
+      currentTool = tool;
+    }
+
+    svg.addEventListener("mousedown", (e) => {
+      drawing = true;
+      const rect = svg.getBoundingClientRect();
+      startX = e.clientX - rect.left;
+      startY = e.clientY - rect.top;
+
+      switch (currentTool) {
+        case "rect":
+          shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          shape.setAttribute("x", startX);
+          shape.setAttribute("y", startY);
+          shape.setAttribute("width", 0);
+          shape.setAttribute("height", 0);
+          shape.setAttribute("class", "shape");
+          break;
+
+        case "ellipse":
+          shape = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+          shape.setAttribute("cx", startX);
+          shape.setAttribute("cy", startY);
+          shape.setAttribute("rx", 0);
+          shape.setAttribute("ry", 0);
+          shape.setAttribute("class", "shape");
+          break;
+
+        case "line":
+        case "arrow":
+          shape = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          shape.setAttribute("x1", startX);
+          shape.setAttribute("y1", startY);
+          shape.setAttribute("x2", startX);
+          shape.setAttribute("y2", startY);
+          shape.setAttribute("class", currentTool === "arrow" ? "arrow" : "shape");
+          break;
+      }
+      svg.appendChild(shape);
+    });
+
+    svg.addEventListener("mousemove", (e) => {
+      if (!drawing) return;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      switch (currentTool) {
+        case "rect":
+          shape.setAttribute("x", Math.min(x, startX));
+          shape.setAttribute("y", Math.min(y, startY));
+          shape.setAttribute("width", Math.abs(x - startX));
+          shape.setAttribute("height", Math.abs(y - startY));
+          break;
+
+        case "ellipse":
+          shape.setAttribute("cx", (x + startX) / 2);
+          shape.setAttribute("cy", (y + startY) / 2);
+          shape.setAttribute("rx", Math.abs(x - startX) / 2);
+          shape.setAttribute("ry", Math.abs(y - startY) / 2);
+          break;
+
+        case "line":
+        case "arrow":
+          shape.setAttribute("x2", x);
+          shape.setAttribute("y2", y);
+          break;
+      }
+    });
+
+    svg.addEventListener("mouseup", () => {
+      drawing = false;
+    });
+  </script>
+</body>
+</html>

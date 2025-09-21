@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./pdf-demo.css" />
+    <script src="./pdf-demo.js"></script>
+    <script
+      src="https://mozilla.github.io/pdf.js/build/pdf.mjs"
+      type="module"
+    ></script>
+    <title>Pdf-Demo</title>
+  </head>
+  <body>
+    <form id="FORM">
+      <div>
+        <div>
+          <span
+            ><span id="visibleSize"></span>件/全<span id="totalSize"></span
+            >件</span
+          >
+          <label for="page">ページ</label>
+          <select name="page" id="page"></select>
+          <label for="size">行数</label>
+          <select name="size" id="size">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <button type="button" onclick="getPdfList()">更新</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ファイル名</th>
+            <th>ページ数</th>
+            <th>アップロード時間</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="RESULT">
+          <!--
+            ###rows###
+            ###list###
+            <tr
+              data-id="%1"
+              data-src="./INPUT/%3/PDF_LIST/%1/PDF.1#toolbar=0"
+              data-pages="%4"
+            >
+                <td>%1</td>
+                <td><a target="_blank" href="./INPUT/%3/PDF_LIST/%1/PDF">%2</a></td>
+                <td>%4</td>
+                <td>%6</td>
+                <td>
+                  <button type="button" onclick="deletePdf('%1')">削除</button>
+                  <button type="button" onclick="editPdf(event)">編集</button>
+                </td>
+            </tr>
+            ###list###
+            ###empty###
+            <tr><td colspan="4">表示するデータを存在していません。</td></tr>
+            ###empty###
+            ###rows###
+          -->
+        </tbody>
+      </table>
+    </form>
+    <section>
+      <button onclick="handleUploadButton()" type="button">
+        PDFをアップロード
+      </button>
+    </section>
+    <section class="iframe-container hidden">
+      <div>
+        <div>
+          <span><span id="pdf-page"></span>/<span id="pdf-pages"></span></span>
+          <button type="button" onclick="pdfPrevPage()">前のページ</button>
+          <button type="button" onclick="pdfNextPage()">次のページ</button>
+          <button type="button" onclick="saveObjectOnThePage()">
+            表示されているページに要素を紐づいて保存
+          </button>
+          <!-- <button type="button" onclick="saveObjectOnAllPage()">
+            全てのページに要素を紐づいて保存
+          </button> -->
+          <button type="button" onclick="downloadPdf()">
+            PDFをダウンロード
+          </button>
+        </div>
+        <div id="toolbar">
+          <button onclick="setTool('rect')">長方形</button>
+          <button onclick="setTool('ellipse')">楕円形</button>
+          <button onclick="setTool('line')">直線</button>
+          <!-- <button onclick="setTool('arrow')">Arrow</button> -->
+          <button onclick="deleteShape()">選択された要素を削除</button>
+        </div>
+      </div>
+      <div>
+        <div id="properties" onchange="setProperties(event)">
+          <label for="border-width">枠線の太さ</label>
+          <input id="border-width" type="number" min="0" value="2" />
+          <br />
+          <label for="border-color">枠線の色</label>
+          <input type="color" list="redColors" id="border-color" />
+          <datalist id="redColors">
+            <option value="black">black</option>
+            <option value="orange">orange</option>
+          </datalist>
+
+          <br />
+          <label for="background-color">背景色</label>
+          <input id="background-color" type="color" />
+          <br />
+          <label for="opacity">不透明度</label>
+          <input
+            type="range"
+            id="opacity"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0"
+          />
+          <br />
+        </div>
+        <div class="wrapper" style="position: relative">
+          <iframe src=""></iframe>
+          <svg id="pdf-widgets">
+            <!-- Arrow marker -->
+            <defs>
+              <marker
+                id="arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="10"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="red" />
+              </marker>
+            </defs>
+          </svg>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

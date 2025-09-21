@@ -1,0 +1,37 @@
+#!/bin/bash
+source ../SHELL/common
+
+echo "$QUERY_STRING" |
+cgi-name -s_ -n_ -e_ |
+cat                  > $tmp-query
+
+id=$(nameread id $tmp-query);
+page=$(nameread page $tmp-query);
+
+ucat $inpd/PDF_LIST                                  |
+selr 1 $id                                           |
+self 4 3                                         |
+cat <(echo "pageCount uploadedDate") -  |
+tateyoko                                             |
+cat > $tmp-name
+
+uploadedDate=$(nameread uploadedDate $tmp-name)
+
+cat $inpd/$uploadedDate/PDF_LIST/$id/page-size-$page |
+cat <(echo width height) - |
+tateyoko |
+cat >> $tmp-name
+
+
+cat $tmp-name |
+wjson                                                |
+itouch "{}" -                                        |
+cat                                                  > $tmp-output
+
+
+echo "Content-type:text/plain"
+echo
+cat $tmp-output
+
+rm -rf $tmp-*
+exit 0

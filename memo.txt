@@ -1,0 +1,6 @@
+2025/09/18 8:43
+
+apt install poppler-utils sudo python3 python3-pip
+passwd ubuntu --> suhee123
+
+poppler-utils --> 37.6MB
