@@ -1,5 +1,14 @@
 const PADDING = 5;
 
+const originalFetch = window.fetch;
+
+window.fetch = async (...args) => {
+  loading(true);
+  return originalFetch(...args).finally(() => {
+    loading(false);
+  });
+};
+
 const getPdfList = async () => {
   const method = "POST";
   let body = "";
@@ -145,8 +154,6 @@ const getPdfPage = async (page) => {
   }
 };
 
-const renderWidgets = () => {};
-
 const editPdf = (event) => {
   const row = event.target.closest("tr");
   const { id } = row.dataset;
@@ -256,6 +263,8 @@ const setProperties = (event) => {
         )
       );
       break;
+    case "shape-text":
+      selectedShape.textContent = event.target.value;
     default:
       break;
   }
@@ -273,7 +282,7 @@ const initDrawing = () => {
 
   window.setTool = (tool) => {
     currentTool = tool;
-    clearSelection();
+    window.clearSelection();
   };
 
   window.clearSelection = () => {
@@ -309,6 +318,12 @@ const initDrawing = () => {
       document.getElementById("opacity").value = alpha;
       document.getElementById("border-color").value = borderColor;
 
+      if (selectedShape.localName === "text") {
+        document.getElementById("shape-text").value = selectedShape.textContent.trim();
+      }
+
+
+
       // Start dragging
       dragging = true;
       const rect = svg.getBoundingClientRect();
@@ -334,7 +349,6 @@ const initDrawing = () => {
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         break;
-
       case "ellipse":
         shape = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -348,7 +362,6 @@ const initDrawing = () => {
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         break;
-
       case "line":
       case "arrow":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -359,6 +372,12 @@ const initDrawing = () => {
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
+        break;
+      case "text":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        shape.setAttribute("x", e.clientX - rect.x);
+        shape.setAttribute("y", e.clientY - rect.y);
+        shape.textContent = "Edit Text";
         break;
     }
     svg.appendChild(shape);
@@ -399,6 +418,7 @@ const initDrawing = () => {
 
       switch (selectedShape.tagName) {
         case "rect":
+          case "text":
           selectedShape.setAttribute(
             "x",
             +selectedShape.getAttribute("x") + dx
@@ -448,9 +468,14 @@ const initDrawing = () => {
   // Delete key shortcut
   document.addEventListener("keydown", (e) => {
     if (e.key === "Delete" || e.key === "Backspace") {
-      deleteShape();
+      window.deleteShape();
     }
   });
+};
+
+const loading = (visible = true) => {
+  const e = document.querySelector(".loading");
+  e.classList.toggle("visible", visible);
 };
 
 const convertSvg2Png = (svgEl) =>
@@ -460,14 +485,14 @@ const convertSvg2Png = (svgEl) =>
     try {
       const svgContainer = svgEl.closest("svg");
 
-      const width = parseFloat(svgContainer.style.width.replace("px", ""))
-      const height = parseFloat(svgContainer.style.height.replace("px", ""))
+      const width = parseFloat(svgContainer.style.width.replace("px", ""));
+      const height = parseFloat(svgContainer.style.height.replace("px", ""));
 
       const svgElClone = svgEl.cloneNode(true);
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.style.height = `${height}px`
-      svg.style.width = `${width}px`
-      svg.append(svgElClone)
+      svg.style.height = `${height}px`;
+      svg.style.width = `${width}px`;
+      svg.append(svgElClone);
 
       const xml = new XMLSerializer().serializeToString(svg);
       const svg64 =
@@ -482,6 +507,8 @@ const convertSvg2Png = (svgEl) =>
           const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
+          // canvas.width = width*scale;
+          // canvas.height = height*scale;
 
           const ctx = canvas.getContext("2d");
           // ctx.setTransform(scale, 0, 0, scale, 0, 0); // scale everything

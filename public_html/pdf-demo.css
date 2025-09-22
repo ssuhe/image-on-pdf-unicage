@@ -1,15 +1,49 @@
-table {
-  border-collapse: collapse;
-  margin: 1rem 0;
+
+html,body {
+  height: 100%;
+  margin: 0;
+  
 }
-table,
-table td,
-table th {
+body {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  position: relative;
+  overflow: auto;
+}
+
+*,*::after, *::before {
+  box-sizing: border-box;
+}
+
+
+.table-header {
+  display: flex;
+
+}
+
+.header-buttons {
+  margin-left: 5rem;
+}
+
+table.pdf-list {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+}
+table.pdf-list,
+table.pdf-list td,
+table.pdf-list th {
   border: 1px solid black;
 }
-table td,
-table th {
+table.pdf-list td,
+table.pdf-list th {
   padding: 0.2rem 0.5rem;
+}
+
+.iframe-container {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  width: fit-content;
 }
 
 section.hidden {
@@ -51,4 +85,24 @@ iframe {
   /* border: 1px solid #ccc; */
   outline: 1px solid #ccc;
   border: none;
+}
+
+svg > *:hover {
+  cursor: move;
+}
+
+
+.loading {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  display: none;
+  inset: 0;
+
+  justify-content: center;
+  align-items: center;
+}
+
+.loading.visible {
+  display: flex;
 }

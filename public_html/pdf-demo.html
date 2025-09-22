@@ -8,16 +8,19 @@
       src="https://mozilla.github.io/pdf.js/build/pdf.mjs"
       type="module"
     ></script>
-    <title>Pdf-Demo</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/font-awesome-4@4.7.4/css/font-awesome.min.css"
+    />
 
+    <title>Pdf-Demo</title>
 
     <link rel="stylesheet" href="./pdf-demo.css?v=20250922-1412" />
     <script src="./pdf-demo.js?v=20250922-1419"></script>
-
   </head>
   <body>
     <form id="FORM">
-      <div>
+      <div class="table-header">
         <div>
           <span
             ><span id="visibleSize"></span>件/全<span id="totalSize"></span
@@ -33,9 +36,14 @@
             <option value="100">100</option>
           </select>
         </div>
-        <button type="button" onclick="getPdfList()">更新</button>
+        <div class="header-buttons">
+          <button type="button" onclick="getPdfList()">更新</button>
+          <button onclick="handleUploadButton()" type="button">
+            PDFをアップロード
+          </button>
+        </div>
       </div>
-      <table>
+      <table class="pdf-list">
         <thead>
           <tr>
             <th>#</th>
@@ -72,61 +80,143 @@
         </tbody>
       </table>
     </form>
-    <section>
-      <button onclick="handleUploadButton()" type="button">
-        PDFをアップロード
-      </button>
-    </section>
     <section class="iframe-container hidden">
       <div>
         <div>
           <span><span id="pdf-page"></span>/<span id="pdf-pages"></span></span>
           <button type="button" onclick="pdfPrevPage()">前のページ</button>
           <button type="button" onclick="pdfNextPage()">次のページ</button>
-          <button type="button" onclick="saveObjectOnThePage()">
-            表示されているページに要素を紐づいて保存
-          </button>
+          <button type="button" style="margin-left: 5rem;" onclick="saveObjectOnThePage()">保存</button>
           <!-- <button type="button" onclick="saveObjectOnAllPage()">
             全てのページに要素を紐づいて保存
           </button> -->
+          <button onclick="deleteShape()">選択された要素を削除</button>
+
           <button type="button" onclick="downloadPdf()">
             PDFをダウンロード
           </button>
         </div>
-        <div id="toolbar">
+        <div id="toolbar" style="margin:0.5rem 0;">
           <button onclick="setTool('rect')">長方形</button>
           <button onclick="setTool('ellipse')">楕円形</button>
           <button onclick="setTool('line')">直線</button>
-          <!-- <button onclick="setTool('arrow')">Arrow</button> -->
-          <button onclick="deleteShape()">選択された要素を削除</button>
+          <button onclick="setTool('text')">テキスト</button>
         </div>
       </div>
-      <div>
-        <div id="properties" onchange="setProperties(event)">
-          <label for="border-width">枠線の太さ</label>
-          <input id="border-width" type="number" min="0" value="2" />
-          <br />
-          <label for="border-color">枠線の色</label>
-          <input type="color" list="redColors" id="border-color" />
-          <datalist id="redColors">
-            <option value="black">black</option>
-            <option value="orange">orange</option>
-          </datalist>
-
-          <br />
-          <label for="background-color">背景色</label>
-          <input id="background-color" type="color" />
-          <br />
-          <label for="opacity">不透明度</label>
-          <input
-            type="range"
-            id="opacity"
-            min="0"
-            max="1"
-            step="0.01"
-            value="0"
-          />
-          <br />
+      <div style="display: flex; gap: 0.5rem;">
+        <div id="properties" onkeydown="event.stopPropagation()" onchange="setProperties(event)">
+          <table>
+            <tbody>
+              <tr>
+                <td>
+                  <label for="border-width">枠線の太さ</label>
+                </td>
+                <td>
+                  <input id="border-width" type="number" min="0" value="2" />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <label for="border-color">枠線の色</label>
+                </td>
+                <td>
+                  <input type="color" list="redColors" id="border-color" />
+                  <datalist id="redColors">
+                    <option value="black">black</option>
+                    <option value="orange">orange</option>
+                  </datalist>
+                </td>
+              </tr>
+              <tr>
+                <td><label for="background-color">背景色</label></td>
+                <td><input id="background-color" type="color" /></td>
+              </tr>
+              <tr>
+                <td><label for="opacity">不透明度</label></td>
+                <td>
+                  <input
+                    type="range"
+                    id="opacity"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0"
+                  />
+                </td>
+              </tr>
+<!-- 
+              <tr>
+                <td><label for="shape-X">X</label></td>
+                <td><input type="number" id="shape-X" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-Y">Y</label></td>
+                <td><input type="number" id="shape-Y" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-CX">CX</label></td>
+                <td><input type="number" id="shape-CX" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-CY">CY</label></td>
+                <td><input type="number" id="shape-CY" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-RX">RX</label></td>
+                <td><input type="number" id="shape-RX" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-RY">RY</label></td>
+                <td><input type="number" id="shape-RY" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-X1">X1</label></td>
+                <td><input type="number" id="shape-X1" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-X2">X2</label></td>
+                <td><input type="number" id="shape-X2" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-Y1">Y1</label></td>
+                <td><input type="number" id="shape-Y1" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-Y2">Y2</label></td>
+                <td><input type="number" id="shape-Y2" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-W">W</label></td>
+                <td><input type="number" id="shape-W" /></td>
+              </tr>
+              <tr>
+                <td><label for="shape-H">H</label></td>
+                <td><input type="number" id="shape-H" /></td>
+              </tr> -->
+              <tr>
+                <td><label for="shape-text">テキスト</label></td>
+                <td><input id="shape-text"/></td>
+              </tr>
+              <!-- <tr>
+                <td><label for="line-start">線の始まり</label></td>
+                <td>
+                  <select id="line-start">
+                    <option value="">None</option>
+                    <option value="arrow">矢印</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td><label for="line-end">線の終わり</label></td>
+                <td>
+                  <select id="line-start">
+                    <option value="">None</option>
+                    <option value="arrow">矢印</option>
+                  </select>
+                </td>
+              </tr> -->
+            </tbody>
+          </table>
         </div>
         <div class="wrapper" style="position: relative">
           <iframe src=""></iframe>
@@ -148,5 +238,6 @@
         </div>
       </div>
     </section>
+    <div class="loading">Loading ...</div>
   </body>
 </html>
