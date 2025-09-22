@@ -1,3 +1,5 @@
+const PADDING = 5;
+
 const getPdfList = async () => {
   const method = "POST";
   let body = "";
@@ -451,22 +453,21 @@ const initDrawing = () => {
   });
 };
 
-const convertSvg2Png = (svgEl, w, h) =>
+const convertSvg2Png = (svgEl) =>
   new Promise((resolve, reject) => {
     const scale = 4;
 
     try {
+      const svgContainer = svgEl.closest("svg");
+
+      const width = parseFloat(svgContainer.style.width.replace("px", ""))
+      const height = parseFloat(svgContainer.style.height.replace("px", ""))
+
       const svgElClone = svgEl.cloneNode(true);
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-      svg.setAttribute("width", w);
-      svg.setAttribute("height", h);
-      svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-
-      svg.append(svgElClone);
-
-      svgElClone.removeAttribute("x");
-      svgElClone.removeAttribute("y");
+      svg.style.height = `${height}px`
+      svg.style.width = `${width}px`
+      svg.append(svgElClone)
 
       const xml = new XMLSerializer().serializeToString(svg);
       const svg64 =
@@ -479,12 +480,12 @@ const convertSvg2Png = (svgEl, w, h) =>
         .decode()
         .then(() => {
           const canvas = document.createElement("canvas");
-          canvas.width = w * scale;
-          canvas.height = h * scale;
+          canvas.width = width;
+          canvas.height = height;
 
           const ctx = canvas.getContext("2d");
-          ctx.setTransform(scale, 0, 0, scale, 0, 0); // scale everything
-          ctx.drawImage(img, 0, 0, w, h);
+          // ctx.setTransform(scale, 0, 0, scale, 0, 0); // scale everything
+          ctx.drawImage(img, 0, 0, width, height);
 
           canvas.toBlob((blob) => {
             if (blob) resolve(blob);
@@ -524,8 +525,8 @@ const saveObjectOnThePage = async () => {
         if (width === 0 && height === 0) return;
         switch (name) {
           case "rect":
-            x = e.getAttribute("x");
-            y = e.getAttribute("y");
+            x = parseFloat(e.getAttribute("x"));
+            y = parseFloat(e.getAttribute("y"));
             break;
           case "ellipse":
             x =
@@ -543,15 +544,11 @@ const saveObjectOnThePage = async () => {
             break;
         }
 
-        return convertSvg2Png(e, width, height).then((blob) => {
+        return convertSvg2Png(e).then((blob) => {
           // test
           const img = document.createElement("img");
           img.src = URL.createObjectURL(blob);
           formdata.append(`widget-${index}`, blob, `widget-${index}.png`);
-          params.append(`widget-${index}-x`, x);
-          params.append(`widget-${index}-y`, y);
-          params.append(`widget-${index}-w`, width);
-          params.append(`widget-${index}-h`, height);
           index++;
         });
       })

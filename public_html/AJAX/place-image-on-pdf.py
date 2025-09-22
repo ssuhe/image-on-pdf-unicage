@@ -60,10 +60,6 @@ for pageNo in range(1,pageCount+1):
                 print(f"loop by widget: pageNo={pageNo}; insidePage={page_number}; {widget}")
 
                 widgetId = widget[0]
-                widgetX = float(widget[1])
-                widgetY = float(widget[2])
-                widgetW = float(widget[3])
-                widgetH = float(widget[4])
                 
                 pngImagePath = f"{main_path}/WIDGETS/page-{pageNo}/{widgetId}.png"
 
@@ -71,11 +67,9 @@ for pageNo in range(1,pageCount+1):
                 can = canvas.Canvas(packet, pagesize=(page_width, page_height))
                 can.drawImage(
                     pngImagePath,
-                    x=widgetX,
-                    y=page_height - widgetH - widgetY,
-                    width=widgetW,
-                    height=widgetH,
-                    mask="auto",  # keep transparent background
+                    x=0,
+                    y=0,
+                    mask="auto",
                 )
                 can.save()
 
