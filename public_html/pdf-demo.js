@@ -126,7 +126,7 @@ const getPdfPage = async (page) => {
     canvas.style.width = width + "px";
 
     const svgContent = await fetch(
-      `./INPUT/${uploadedDate}/PDF_LIST/${id}/WIDGETS/page-${page}/SVG`
+      `./INPUT/${uploadedDate}/PDF_LIST/${id}/WIDGETS/page-${page}/SVG?v=${new Date().getTime()}`
     )
       .then(async (res) => {
         if (res.status !== 200) return "";
