@@ -313,16 +313,23 @@ const initDrawing = () => {
       );
       const borderWidth = selectedShape.style.strokeWidth || 2;
 
-      document.getElementById("border-width").value = borderWidth;
-      document.getElementById("background-color").value = bgColor;
-      document.getElementById("opacity").value = alpha;
-      document.getElementById("border-color").value = borderColor;
-
-      if (selectedShape.localName === "text") {
-        document.getElementById("shape-text").value = selectedShape.textContent.trim();
+      if (borderWidth !== undefined) {
+        document.getElementById("border-width").value = borderWidth;
+      }
+      if (bgColor !== undefined) {
+        document.getElementById("background-color").value = bgColor;
+      }
+      if (alpha !== undefined) {
+        document.getElementById("opacity").value = alpha;
+      }
+      if (borderColor !== undefined) {
+        document.getElementById("border-color").value = borderColor;
       }
 
-
+      if (selectedShape.localName === "text") {
+        document.getElementById("shape-text").value =
+          selectedShape.textContent.trim();
+      }
 
       // Start dragging
       dragging = true;
@@ -379,6 +386,18 @@ const initDrawing = () => {
         shape.setAttribute("y", e.clientY - rect.y);
         shape.textContent = "Edit Text";
         break;
+      case "hanko":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        shape.setAttribute("href", "http://localhost:9111/hanko.png");
+        shape.setAttribute("x", startX);
+        shape.setAttribute("y", startY);
+        shape.setAttribute("width", 0);
+        shape.setAttribute("height", 0);
+        shape.setAttribute("stroke", "black");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        shape.setAttribute("preserveAspectRatio", "none")
+        break;
     }
     svg.appendChild(shape);
   });
@@ -391,12 +410,12 @@ const initDrawing = () => {
     if (drawing) {
       switch (currentTool) {
         case "rect":
+        case "hanko":
           shape.setAttribute("x", Math.min(x, startX));
           shape.setAttribute("y", Math.min(y, startY));
           shape.setAttribute("width", Math.abs(x - startX));
           shape.setAttribute("height", Math.abs(y - startY));
           break;
-
         case "ellipse":
           shape.setAttribute("cx", (x + startX) / 2);
           shape.setAttribute("cy", (y + startY) / 2);
@@ -418,7 +437,8 @@ const initDrawing = () => {
 
       switch (selectedShape.tagName) {
         case "rect":
-          case "text":
+        case "text":
+        case "image":
           selectedShape.setAttribute(
             "x",
             +selectedShape.getAttribute("x") + dx
@@ -478,40 +498,43 @@ const loading = (visible = true) => {
   e.classList.toggle("visible", visible);
 };
 
-const convertSvg2Png = (svgEl) =>
+const convertSvg2Png = (svgEl, w, h) =>
   new Promise((resolve, reject) => {
-    const scale = 4;
-
     try {
-      const svgContainer = svgEl.closest("svg");
+      let width = w;
+      let height = h;
+      let src = "";
 
-      const width = parseFloat(svgContainer.style.width.replace("px", ""));
-      const height = parseFloat(svgContainer.style.height.replace("px", ""));
-
-      const svgElClone = svgEl.cloneNode(true);
+      const scale = 4;
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      const svgElClone = svg.appendChild(svgEl.cloneNode(true));
+
+      if (svgElClone.localName === "image") {
+        src = svgElClone.getAttribute("href");
+        width = Math.min(width, height);
+        height = Math.min(width, height);
+      } else {
+        const xml = new XMLSerializer().serializeToString(svg);
+        src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+      }
+
       svg.style.height = `${height}px`;
       svg.style.width = `${width}px`;
-      svg.append(svgElClone);
-
-      const xml = new XMLSerializer().serializeToString(svg);
-      const svg64 =
-        "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
 
       const img = new Image();
-      img.src = svg64;
+      img.src = src;
 
       img
         .decode()
         .then(() => {
           const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          // canvas.width = width*scale;
-          // canvas.height = height*scale;
+          // canvas.width = width;
+          // canvas.height = height;
+          canvas.width = width * scale;
+          canvas.height = height * scale;
 
           const ctx = canvas.getContext("2d");
-          // ctx.setTransform(scale, 0, 0, scale, 0, 0); // scale everything
+          ctx.setTransform(scale, 0, 0, scale, 0, 0); // scale everything
           ctx.drawImage(img, 0, 0, width, height);
 
           canvas.toBlob((blob) => {
@@ -552,6 +575,8 @@ const saveObjectOnThePage = async () => {
         if (width === 0 && height === 0) return;
         switch (name) {
           case "rect":
+          case "image":
+          case "text":
             x = parseFloat(e.getAttribute("x"));
             y = parseFloat(e.getAttribute("y"));
             break;
@@ -571,11 +596,15 @@ const saveObjectOnThePage = async () => {
             break;
         }
 
-        return convertSvg2Png(e).then((blob) => {
+        return convertSvg2Png(e, width, height).then((blob) => {
           // test
           const img = document.createElement("img");
           img.src = URL.createObjectURL(blob);
           formdata.append(`widget-${index}`, blob, `widget-${index}.png`);
+          params.append(`widget-${index}-x`, x);
+          params.append(`widget-${index}-y`, y);
+          params.append(`widget-${index}-w`, width);
+          params.append(`widget-${index}-h`, height);
           index++;
         });
       })
@@ -628,6 +657,18 @@ const downloadPdf = async () => {
   } catch (error) {
     alert(error.message);
   }
+};
+
+const imageList = {};
+
+const loadImage = async (url = []) => {
+  await Promise.all(
+    url.map((u) =>
+      fetch(u)
+        .then((res) => res.blob())
+        .then((blob) => (imageList[`${u}`] = URL.createObjectURL(blob)))
+    )
+  );
 };
 
 document.addEventListener("DOMContentLoaded", () => {

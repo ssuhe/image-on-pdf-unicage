@@ -28,9 +28,9 @@ fi
 uploadDate=$(self 3 $tmp-existing)
 baseDir=$inpd/$uploadDate/PDF_LIST/$id/WIDGETS/page-$pageNo
 
+mkdir -p $baseDir
 ucat $baseDir/SVG > $baseDir/SVG.$todayhms-$$
 
-mkdir -p $baseDir
 itouch 0 $baseDir/NO
 
 cat $tmp-mime |
@@ -55,7 +55,7 @@ do
 done
 
 if ulock $baseDir/WIDGETS-POSITION.lock ;then
-    mv $tmp-lv1~ $baseDir/WIDGETS-POSITION
+    ucat $tmp-lv1~ > $baseDir/WIDGETS-POSITION
     rm -rf $baseDir/WIDGETS-POSITION.lock
 fi
 
