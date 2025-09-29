@@ -387,8 +387,10 @@ const initDrawing = () => {
         shape.textContent = "Edit Text";
         break;
       case "hanko":
+        const paths = location.href.split("/")
+        const hankoFullPath = [...paths.slice(0, paths.length -1)].join("/") + "/hanko.png";
         shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
-        shape.setAttribute("href", "http://localhost:9111/hanko.png");
+        shape.setAttribute("href", hankoFullPath);
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
         shape.setAttribute("width", 0);
