@@ -265,6 +265,11 @@ const setProperties = (event) => {
       break;
     case "shape-text":
       selectedShape.textContent = event.target.value;
+      break;
+    case "border-radius":
+      selectedShape.setAttribute("rx", event.target.value)
+      selectedShape.setAttribute("ry", event.target.value)
+      break;
     default:
       break;
   }
@@ -307,7 +312,7 @@ const initDrawing = () => {
       selectedShape = e.target;
       selectedShape.classList.add("selected");
 
-      const borderColor = getHex(selectedShape.style.stroke || "rgba(0,0,0ß)");
+      const borderColor = getHex(selectedShape.style.stroke || "rgba(0,0,0)");
       const [bgColor, alpha] = getHexAlpha(
         selectedShape.style.fill || "rgba(0,0,0,0)"
       );
@@ -329,6 +334,11 @@ const initDrawing = () => {
       if (selectedShape.localName === "text") {
         document.getElementById("shape-text").value =
           selectedShape.textContent.trim();
+      }
+
+      if (selectedShape.localName === "rect") {
+        document.getElementById("border-radius").value =
+          selectedShape.getAttribute("rx") || "0";
       }
 
       // Start dragging
@@ -521,10 +531,10 @@ const convertSvg2Png = (svgEl, w, h) =>
           svgElClone.setAttribute("y", PADDING);
           break;
         case "ellipse":
-          const rx = Number(svgElClone.getAttribute("rx"))
-          const ry = Number(svgElClone.getAttribute("ry"))
-          svgElClone.setAttribute("cx", rx + PADDING)
-          svgElClone.setAttribute("cy", ry + PADDING)
+          const rx = Number(svgElClone.getAttribute("rx"));
+          const ry = Number(svgElClone.getAttribute("ry"));
+          svgElClone.setAttribute("cx", rx + PADDING);
+          svgElClone.setAttribute("cy", ry + PADDING);
 
           break;
         case "line":
