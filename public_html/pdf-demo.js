@@ -517,36 +517,40 @@ const convertSvg2Png = (svgEl, w, h) =>
       switch (svgElClone.localName) {
         case "rect":
         case "image":
-          // svgElClone.setAttribute("x", PADDING - parseFloat(svgElClone.getAttribute("stroke-width")));
-          // svgElClone.setAttribute("y", PADDING - parseFloat(svgElClone.getAttribute("stroke-width")));
           svgElClone.setAttribute("x", PADDING);
           svgElClone.setAttribute("y", PADDING);
           break;
         case "ellipse":
+          const rx = Number(svgElClone.getAttribute("rx"))
+          const ry = Number(svgElClone.getAttribute("ry"))
+          svgElClone.setAttribute("cx", rx + PADDING)
+          svgElClone.setAttribute("cy", ry + PADDING)
+
           break;
         case "line":
-          const lineX1 = parseFloat(svgElClone.getAttribute("x1"));
-          const lineX2 = parseFloat(svgElClone.getAttribute("x2"));
-          const lineY1 = parseFloat(svgElClone.getAttribute("y1"));
-          const lineY2 = parseFloat(svgElClone.getAttribute("y2"));
-          const lineW = parseFloat(svgElClone.getAttribute("width"));
-          const lineH = parseFloat(svgElClone.getAttribute("height"));
+          const lineX1 = Number(svgElClone.getAttribute("x1"));
+          const lineX2 = Number(svgElClone.getAttribute("x2"));
+          const lineY1 = Number(svgElClone.getAttribute("y1"));
+          const lineY2 = Number(svgElClone.getAttribute("y2"));
+
+          const dx = Math.abs(lineX1 - lineX2);
+          const dy = Math.abs(lineY1 - lineY2);
 
           svgElClone.setAttribute(
             "x1",
-            lineX2 > lineX1 ? PADDING : lineW + PADDING
+            lineX2 > lineX1 ? PADDING : dx + PADDING
           );
           svgElClone.setAttribute(
             "y1",
-            lineY2 > lineY1 ? PADDING : lineH + PADDING
+            lineY2 > lineY1 ? PADDING : dy + PADDING
           );
           svgElClone.setAttribute(
             "x2",
-            lineX2 > lineX1 ? lineW + PADDING : PADDING
+            lineX2 > lineX1 ? dx + PADDING : PADDING
           );
           svgElClone.setAttribute(
             "y2",
-            lineY2 > lineY1 ? lineH + PADDING : PADDING
+            lineY2 > lineY1 ? dy + PADDING : PADDING
           );
           break;
         case "text":
@@ -565,7 +569,6 @@ const convertSvg2Png = (svgEl, w, h) =>
         const xml = new XMLSerializer().serializeToString(svg);
         src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
       }
-
 
       const img = new Image();
       img.src = src;
@@ -623,8 +626,8 @@ const saveObjectOnThePage = async () => {
           case "rect":
           case "image":
           case "text":
-            x = parseFloat(e.getAttribute("x"));
-            y = parseFloat(e.getAttribute("y"));
+            x = Number(e.getAttribute("x"));
+            y = Number(e.getAttribute("y"));
             break;
           case "ellipse":
             x =
