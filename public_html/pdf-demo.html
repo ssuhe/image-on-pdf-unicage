@@ -19,6 +19,13 @@
     <script src="./pdf-demo.js?v=20250929-1748"></script>
   </head>
   <body>
+    <div>
+      <input id="stamp-head" type="text" value="手配済" />
+      <input id="stamp-name" type="text" value="井上" />
+      <input id="stamp-date" type="text" value="'25.06.25" />
+      <input id="stamp-comp" type="text" value="共栄機工" />
+    </div>
+
     <form id="FORM">
       <div class="table-header">
         <div>
@@ -86,7 +93,13 @@
           <span><span id="pdf-page"></span>/<span id="pdf-pages"></span></span>
           <button type="button" onclick="pdfPrevPage()">前のページ</button>
           <button type="button" onclick="pdfNextPage()">次のページ</button>
-          <button type="button" style="margin-left: 5rem;" onclick="saveObjectOnThePage()">保存</button>
+          <button
+            type="button"
+            style="margin-left: 5rem"
+            onclick="saveObjectOnThePage()"
+          >
+            保存
+          </button>
           <!-- <button type="button" onclick="saveObjectOnAllPage()">
             全てのページに要素を紐づいて保存
           </button> -->
@@ -96,16 +109,41 @@
             PDFをダウンロード
           </button>
         </div>
-        <div id="toolbar" style="margin:0.5rem 0;">
+        <div id="toolbar" style="margin: 0.5rem 0">
           <button onclick="setTool('rect')">長方形</button>
           <button onclick="setTool('ellipse')">楕円形</button>
           <button onclick="setTool('line')">直線</button>
           <button onclick="setTool('text')">テキスト</button>
           <button onclick="setTool('hanko')">ハンコ</button>
+
+          <label style="margin-left: 5rem">DEFAULT OBJECT</label>
+          <select onchange="setTool(event.target.value)">
+            <option value="">None</option>
+            <option value="01">①四角</option>
+            <option value="02">②角が丸い四角</option>
+            <option value="03">③楕円丸</option>
+            <option value="04">④消すようの白四角（縁なし）</option>
+            <option value="05">⑤直線</option>
+            <option value="06">⑥矢印</option>
+            <option value="07">
+              ⑦マーカー機能（透過系太い直線？フリーハンド）
+            </option>
+            <option value="08">⑧付箋：色が決まっているテキストボックス</option>
+            <option value="09">⑨チェックマーク</option>
+            <option value="10">⑩様</option>
+            <option value="11">⑪訂正用二重線</option>
+            <option value="12">⑫??</option>
+            <option value="13">⑬??</option>
+            <option value="14">ハンコ</option>
+          </select>
         </div>
       </div>
-      <div style="display: flex; gap: 0.5rem;">
-        <div id="properties" onkeydown="event.stopPropagation()" onchange="setProperties(event)">
+      <div style="display: flex; gap: 0.5rem">
+        <div
+          id="properties"
+          onkeydown="event.stopPropagation()"
+          onchange="setProperties(event)"
+        >
           <table>
             <tbody>
               <tr>
@@ -129,6 +167,10 @@
                 </td>
               </tr>
               <tr>
+                <td><label for="border-radius">各丸</label></td>
+                <td><input id="border-radius" type="number" /></td>
+              </tr>
+              <tr>
                 <td><label for="background-color">背景色</label></td>
                 <td><input id="background-color" type="color" /></td>
               </tr>
@@ -147,32 +189,41 @@
               </tr>
               <tr>
                 <td><label for="shape-text">テキスト</label></td>
-                <td><input id="shape-text"/></td>
+                <td><input id="shape-text" /></td>
               </tr>
               <tr>
-                <td><label for="border-radius">各丸</label></td>
-                <td><input id="border-radius" type="number"/></td>
+                <td><label for="text-color">テスト色</label></td>
+                <td>
+                  <input id="text-color" type="color" />
+                </td>
+              </tr>
+
+              <tr>
+                <td><label for="marker-1">マカー①</label></td>
+                <td>
+                  <select id="marker-1">
+                    <option value="">None</option>
+                    <option value="arrow">Arrow</option>
+                    <option value="circle">Circle</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td><label for="marker-2">マカー②</label></td>
+                <td>
+                  <select id="marker-2">
+                    <option value="">None</option>
+                    <option value="arrow">Arrow</option>
+                    <option value="circle">Circle</option>
+                  </select>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="wrapper" style="position: relative">
           <iframe src=""></iframe>
-          <svg id="pdf-widgets">
-            <!-- Arrow marker -->
-            <defs>
-              <marker
-                id="arrowhead"
-                markerWidth="10"
-                markerHeight="7"
-                refX="10"
-                refY="3.5"
-                orient="auto"
-              >
-                <polygon points="0 0, 10 3.5, 0 7" fill="red" />
-              </marker>
-            </defs>
-          </svg>
+          <svg id="pdf-widgets"></svg>
         </div>
       </div>
     </section>

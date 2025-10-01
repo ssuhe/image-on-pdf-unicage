@@ -1,4 +1,30 @@
-const PADDING = 5;
+const PADDING = 10;
+const markerRegex = new RegExp(/\(#(.*)\)/);
+
+const defs = `<defs>
+  <!-- Circle marker -->
+  <marker
+    id="circle"
+    markerWidth="8"
+    markerHeight="8"
+    refX="5"
+    refY="5"
+  >
+    <circle cx="5" cy="5" r="3" fill="black" />
+  </marker>
+
+  <!-- Arrow marker -->
+  <marker
+    id="arrow"
+    markerWidth="10"
+    markerHeight="10"
+    refX="5"
+    refY="5"
+    orient="auto"
+  >
+    <path d="M 0 0 L 10 5 L 0 10 z" fill="black" />
+  </marker>
+</defs>`;
 
 const originalFetch = window.fetch;
 
@@ -146,7 +172,7 @@ const getPdfPage = async (page) => {
     const svg = document.getElementById("pdf-widgets");
     if (svg) {
       if (svgContent) svg.innerHTML = svgContent;
-      else svg.innerHTML = "";
+      else svg.innerHTML = defs.trim();
     }
   } catch (error) {
     console.warn(error);
@@ -191,7 +217,7 @@ function getRgba(hex, alpha) {
 
 function getHex(rgb) {
   // Match rgba(r,g,b,a)
-  const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)\)/);
+  const match = rgb.match(/rgb?\((\d+),\s*(\d+),\s*(\d+)\)/);
   if (!match) return;
 
   const r = parseInt(match[1], 10);
@@ -238,10 +264,14 @@ const setProperties = (event) => {
   if (!selectedShape) return alert("OBJECTを選択してください。");
 
   switch (event.target.id) {
+    case "text-color":
+      selectedShape.setAttribute("fill", event.target.value);
+      break;
     case "border-width":
       selectedShape.setAttribute("stroke-width", event.target.value);
       break;
     case "border-color":
+      console.log(event.target.value);
       selectedShape.setAttribute("stroke", event.target.value);
       break;
     case "background-color":
@@ -264,11 +294,25 @@ const setProperties = (event) => {
       );
       break;
     case "shape-text":
+      if (selectedShape.localName !== "text")
+        return alert("ラインOBJECTを選択してください。");
       selectedShape.textContent = event.target.value;
       break;
     case "border-radius":
-      selectedShape.setAttribute("rx", event.target.value)
-      selectedShape.setAttribute("ry", event.target.value)
+      if (selectedShape.localName !== "rect")
+        return alert("ラインOBJECTを選択してください。");
+      selectedShape.setAttribute("rx", event.target.value);
+      selectedShape.setAttribute("ry", event.target.value);
+      break;
+    case "marker-1":
+      if (selectedShape.localName !== "line")
+        return alert("ラインOBJECTを選択してください。");
+      selectedShape.setAttribute("marker-start", `url(#${event.target.value})`);
+      break;
+    case "marker-2":
+      if (selectedShape.localName !== "line")
+        return alert("ラインOBJECTを選択してください。");
+      selectedShape.setAttribute("marker-end", `url(#${event.target.value})`);
       break;
     default:
       break;
@@ -277,7 +321,7 @@ const setProperties = (event) => {
 
 const initDrawing = () => {
   const svg = document.getElementById("pdf-widgets");
-  let currentTool = "rect";
+  let currentTool = "";
   let drawing = false;
   let startX, startY;
   let shape;
@@ -300,6 +344,18 @@ const initDrawing = () => {
   window.deleteShape = () => {
     if (selectedShape) {
       svg.removeChild(selectedShape);
+
+      if (selectedShape.hasAttribute("data-group-id")) {
+        const groupid = selectedShape.getAttribute("data-group-id");
+        svg
+          .querySelectorAll(`[data-group-id="${groupid}"]`)
+          .forEach((groupElement) => {
+            if (groupElement !== selectedShape) {
+              svg.removeChild(groupElement);
+            }
+          });
+      }
+
       selectedShape = null;
     }
   };
@@ -312,23 +368,34 @@ const initDrawing = () => {
       selectedShape = e.target;
       selectedShape.classList.add("selected");
 
-      const borderColor = getHex(selectedShape.style.stroke || "rgba(0,0,0)");
-      const [bgColor, alpha] = getHexAlpha(
-        selectedShape.style.fill || "rgba(0,0,0,0)"
-      );
-      const borderWidth = selectedShape.style.strokeWidth || 2;
+      const borderColor = selectedShape.getAttribute("stroke") || "#000000";
+
+      if (selectedShape.localName !== "text") {
+        const [bgColor, alpha] = getHexAlpha(
+          selectedShape.getAttribute("fill") !== "none"
+            ? selectedShape.getAttribute("fill")
+            : "rgba(0,0,0,0)"
+        );
+
+        if (alpha !== undefined) {
+          document.getElementById("opacity").value = alpha;
+        }
+        if (bgColor !== undefined) {
+          document.getElementById("background-color").value = bgColor;
+        }
+      } else {
+        const textColor = selectedShape.getAttribute("fill") || "#000000";
+        if (textColor) {
+          document.getElementById("text-color").value = textColor;
+        }
+      }
+      const borderWidth = selectedShape.getAttribute("stroke-width") || 2;
+      if (borderColor !== undefined) {
+        document.getElementById("border-color").value = borderColor;
+      }
 
       if (borderWidth !== undefined) {
         document.getElementById("border-width").value = borderWidth;
-      }
-      if (bgColor !== undefined) {
-        document.getElementById("background-color").value = bgColor;
-      }
-      if (alpha !== undefined) {
-        document.getElementById("opacity").value = alpha;
-      }
-      if (borderColor !== undefined) {
-        document.getElementById("border-color").value = borderColor;
       }
 
       if (selectedShape.localName === "text") {
@@ -339,6 +406,24 @@ const initDrawing = () => {
       if (selectedShape.localName === "rect") {
         document.getElementById("border-radius").value =
           selectedShape.getAttribute("rx") || "0";
+      }
+
+      if (selectedShape.localName === "line") {
+        const markerStart = selectedShape.getAttribute("marker-start") || "";
+        const markerStartValid = String(markerStart).match(markerRegex);
+        if (markerStartValid) {
+          document.getElementById("marker-1").value = `${
+            markerStartValid[1] || ""
+          }`;
+        }
+
+        const markerEnd = selectedShape.getAttribute("marker-end") || "";
+        const markerEndValid = String(markerEnd).match(markerRegex);
+        if (markerEndValid) {
+          document.getElementById("marker-2").value = `${
+            markerEndValid[1] || ""
+          }`;
+        }
       }
 
       // Start dragging
@@ -355,17 +440,57 @@ const initDrawing = () => {
     startX = e.clientX - rect.left;
     startY = e.clientY - rect.top;
 
+    if (currentTool === "") return;
+
     switch (currentTool) {
+      case "01":
       case "rect":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
         shape.setAttribute("width", 0);
         shape.setAttribute("height", 0);
-        shape.setAttribute("stroke", "black");
+        shape.setAttribute("stroke", "#000000");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
+        svg.appendChild(shape);
         break;
+      case "02":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        shape.setAttribute("x", startX);
+        shape.setAttribute("y", startY);
+        shape.setAttribute("rx", 10);
+        shape.setAttribute("ry", 10);
+        shape.setAttribute("width", 0);
+        shape.setAttribute("height", 0);
+        shape.setAttribute("stroke", "#000000");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        svg.appendChild(shape);
+        break;
+      case "04":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        shape.setAttribute("x", startX);
+        shape.setAttribute("y", startY);
+        shape.setAttribute("width", 0);
+        shape.setAttribute("height", 0);
+        shape.setAttribute("stroke", "#000000");
+        shape.setAttribute("fill", "rgba(255,255,255,1)");
+        shape.setAttribute("stroke-width", "0");
+        svg.appendChild(shape);
+        break;
+      case "07":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        shape.setAttribute("x", startX);
+        shape.setAttribute("y", startY);
+        shape.setAttribute("width", 0);
+        shape.setAttribute("height", 0);
+        shape.setAttribute("stroke", "#000000");
+        shape.setAttribute("fill", "rgba(237, 227, 132, 0.5)");
+        shape.setAttribute("stroke-width", "0");
+        svg.appendChild(shape);
+        break;
+      case "03":
       case "ellipse":
         shape = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -378,9 +503,10 @@ const initDrawing = () => {
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
+        svg.appendChild(shape);
         break;
+      case "05":
       case "line":
-      case "arrow":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "line");
         shape.setAttribute("x1", startX);
         shape.setAttribute("y1", startY);
@@ -389,17 +515,41 @@ const initDrawing = () => {
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
+        svg.appendChild(shape);
         break;
+      case "06":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        shape.setAttribute("x1", startX);
+        shape.setAttribute("y1", startY);
+        shape.setAttribute("x2", startX);
+        shape.setAttribute("y2", startY);
+        shape.setAttribute("marker-end", "url(#arrow)");
+        shape.setAttribute("stroke", "black");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        svg.appendChild(shape);
+        break;
+      case "08":
       case "text":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
         shape.setAttribute("x", e.clientX - rect.x);
         shape.setAttribute("y", e.clientY - rect.y);
         shape.textContent = "Edit Text";
+        svg.appendChild(shape);
         break;
+      case "10":
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        shape.setAttribute("x", e.clientX - rect.x);
+        shape.setAttribute("y", e.clientY - rect.y);
+        shape.textContent = "様";
+        svg.appendChild(shape);
+        break;
+      case "14":
       case "hanko":
-        const paths = location.href.split("/");
+        const hankoPath = location.href.split("/");
         const hankoFullPath =
-          [...paths.slice(0, paths.length - 1)].join("/") + "/hanko.png";
+          [...hankoPath.slice(0, hankoPath.length - 1)].join("/") +
+          "/hanko.png";
         shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
         shape.setAttribute("href", hankoFullPath);
         shape.setAttribute("x", startX);
@@ -410,9 +560,190 @@ const initDrawing = () => {
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         shape.setAttribute("preserveAspectRatio", "none");
+        svg.appendChild(shape);
+        break;
+      case "09":
+        const checkboxPath = location.href.split("/");
+        const checkboxFullPath =
+          [...checkboxPath.slice(0, checkboxPath.length - 1)].join("/") +
+          "/check.png";
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        shape.setAttribute("href", checkboxFullPath);
+        shape.setAttribute("x", startX);
+        shape.setAttribute("y", startY);
+        shape.setAttribute("width", 0);
+        shape.setAttribute("height", 0);
+        shape.setAttribute("stroke", "black");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        shape.setAttribute("preserveAspectRatio", "none");
+        svg.appendChild(shape);
+        break;
+      case "11":
+        const doubleLinePath = location.href.split("/");
+        const doubleLineFullPath =
+          [...doubleLinePath.slice(0, doubleLinePath.length - 1)].join("/") +
+          "/double-line.png";
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        shape.setAttribute("href", doubleLineFullPath);
+        shape.setAttribute("x", startX);
+        shape.setAttribute("y", startY);
+        shape.setAttribute("width", 0);
+        shape.setAttribute("height", 0);
+        shape.setAttribute("stroke", "black");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        shape.setAttribute("preserveAspectRatio", "none");
+        svg.appendChild(shape);
+        break;
+      case "12":
+        const stamp1LinePath = location.href.split("/");
+        const stamp1LineFullPath =
+          [...stamp1LinePath.slice(0, stamp1LinePath.length - 1)].join("/") +
+          "/stamp.png";
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        shape.setAttribute("href", stamp1LineFullPath);
+        shape.setAttribute("x", e.clientX - rect.x - 50);
+        shape.setAttribute("y", e.clientY - rect.y - 50);
+        shape.setAttribute("width", 100);
+        shape.setAttribute("height", 100);
+        shape.setAttribute("stroke", "black");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        shape.setAttribute("preserveAspectRatio", "none");
+        svg.appendChild(shape);
+
+        const stamp1Text1 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        stamp1Text1.textContent = document.getElementById("stamp-name").value;
+        svg.append(stamp1Text1);
+        const stamp1Box1 = stamp1Text1.getBBox();
+        stamp1Text1.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp1Box1.width / 2
+        );
+        stamp1Text1.setAttribute("y", e.clientY - rect.y - 25);
+
+        const stamp1today = new Date();
+
+        const stamp1Text2 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        stamp1Text2.textContent = document.getElementById("stamp-date").value;
+        svg.append(stamp1Text2);
+        const stamp1Box2 = stamp1Text2.getBBox();
+        stamp1Text2.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp1Box2.width / 2
+        );
+        stamp1Text2.setAttribute("y", e.clientY - rect.y + 5);
+
+        const stamp1Text3 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        svg.append(stamp1Text3);
+        stamp1Text3.textContent = document.getElementById("stamp-comp").value;
+        const stamp1Box3 = stamp1Text3.getBBox();
+        stamp1Text3.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp1Box3.width / 2
+        );
+        stamp1Text3.setAttribute("y", e.clientY - rect.y + 30);
+
+        shape.setAttribute("data-group-id", stamp1today.getTime());
+        stamp1Text1.setAttribute("data-group-id", stamp1today.getTime());
+        stamp1Text2.setAttribute("data-group-id", stamp1today.getTime());
+        stamp1Text3.setAttribute("data-group-id", stamp1today.getTime());
+
+        drawing = false;
+        dragging = false;
+        break;
+      case "13":
+        const stamp2LinePath = location.href.split("/");
+        const stamp2LineFullPath =
+          [...stamp2LinePath.slice(0, stamp2LinePath.length - 1)].join("/") +
+          "/stamp.png";
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        shape.setAttribute("href", stamp2LineFullPath);
+        shape.setAttribute("x", e.clientX - rect.x - 50);
+        shape.setAttribute("y", e.clientY - rect.y - 50);
+        shape.setAttribute("width", 100);
+        shape.setAttribute("height", 100);
+        shape.setAttribute("stroke", "black");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+        shape.setAttribute("preserveAspectRatio", "none");
+        svg.appendChild(shape);
+
+        const stamp2Text1 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        stamp2Text1.textContent = document.getElementById("stamp-head").value;
+        svg.append(stamp2Text1);
+        const stamp2Box1 = stamp2Text1.getBBox();
+        stamp2Text1.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp2Box1.width / 2
+        );
+        stamp2Text1.setAttribute("y", e.clientY - rect.y - 25);
+
+        const stamp2Today = new Date();
+        const stamp2Text2 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        stamp2Text2.textContent = document.getElementById("stamp-date").value;
+        svg.append(stamp2Text2);
+        const stamp2Box2 = stamp2Text2.getBBox();
+        stamp2Text2.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp2Box2.width / 2
+        );
+        stamp2Text2.setAttribute("y", e.clientY - rect.y + 5);
+
+        const stamp2Text3 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        svg.append(stamp2Text3);
+        stamp2Text3.textContent = document.getElementById("stamp-comp").value;
+        const stamp2Box3 = stamp2Text3.getBBox();
+        stamp2Text3.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp2Box3.width / 2
+        );
+        stamp2Text3.setAttribute("y", e.clientY - rect.y + 30);
+
+        const stamp2Text4 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        svg.append(stamp2Text4);
+        stamp2Text4.textContent = document.getElementById("stamp-name").value;
+        const stamp2Box4 = stamp2Text4.getBBox();
+        stamp2Text4.setAttribute(
+          "x",
+          e.clientX - rect.x - stamp2Box4.width / 2
+        );
+        stamp2Text4.setAttribute("y", e.clientY - rect.y + 45);
+        stamp2Text4.setAttribute("font-size", 12)
+        
+
+        shape.setAttribute("data-group-id", stamp2Today.getTime());
+        stamp2Text1.setAttribute("data-group-id", stamp2Today.getTime());
+        stamp2Text2.setAttribute("data-group-id", stamp2Today.getTime());
+        stamp2Text3.setAttribute("data-group-id", stamp2Today.getTime());
+        stamp2Text4.setAttribute("data-group-id", stamp2Today.getTime());
+
+        drawing = false;
+        dragging = false;
         break;
     }
-    svg.appendChild(shape);
   });
 
   svg.addEventListener("mousemove", (e) => {
@@ -422,6 +753,13 @@ const initDrawing = () => {
 
     if (drawing) {
       switch (currentTool) {
+        case "14":
+        case "11":
+        case "09":
+        case "07":
+        case "04":
+        case "02":
+        case "01":
         case "rect":
         case "hanko":
           shape.setAttribute("x", Math.min(x, startX));
@@ -429,6 +767,7 @@ const initDrawing = () => {
           shape.setAttribute("width", Math.abs(x - startX));
           shape.setAttribute("height", Math.abs(y - startY));
           break;
+        case "03":
         case "ellipse":
           shape.setAttribute("cx", (x + startX) / 2);
           shape.setAttribute("cy", (y + startY) / 2);
@@ -436,8 +775,9 @@ const initDrawing = () => {
           shape.setAttribute("ry", Math.abs(y - startY) / 2);
           break;
 
+        case "06":
+        case "05":
         case "line":
-        case "arrow":
           shape.setAttribute("x2", x);
           shape.setAttribute("y2", y);
           break;
@@ -460,6 +800,24 @@ const initDrawing = () => {
             "y",
             +selectedShape.getAttribute("y") + dy
           );
+
+          if (selectedShape.hasAttribute("data-group-id")) {
+            const groupid = selectedShape.getAttribute("data-group-id");
+            svg
+              .querySelectorAll(`[data-group-id="${groupid}"]`)
+              .forEach((groupElement) => {
+                if (groupElement !== selectedShape) {
+                  groupElement.setAttribute(
+                    "x",
+                    Number(groupElement.getAttribute("x")) + dx
+                  );
+                  groupElement.setAttribute(
+                    "y",
+                    Number(groupElement.getAttribute("y")) + dy
+                  );
+                }
+              });
+          }
           break;
         case "ellipse":
           selectedShape.setAttribute(
@@ -562,10 +920,13 @@ const convertSvg2Png = (svgEl, w, h) =>
             "y2",
             lineY2 > lineY1 ? dy + PADDING : PADDING
           );
+
+          svg.innerHTML += defs.trim();
+
           break;
         case "text":
           svgElClone.setAttribute("x", PADDING);
-          svgElClone.setAttribute("y", PADDING + 16);
+          svgElClone.setAttribute("y", PADDING + 5);
           break;
         default:
           break;
@@ -729,6 +1090,8 @@ const loadImage = async (url = []) => {
     )
   );
 };
+
+function handleChangeTools(event) {}
 
 document.addEventListener("DOMContentLoaded", () => {
   getPdfList();
