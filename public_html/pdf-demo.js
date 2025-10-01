@@ -552,10 +552,10 @@ const initDrawing = () => {
           "/hanko.png";
         shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
         shape.setAttribute("href", hankoFullPath);
-        shape.setAttribute("x", startX);
-        shape.setAttribute("y", startY);
-        shape.setAttribute("width", 0);
-        shape.setAttribute("height", 0);
+        shape.setAttribute("x", e.clientX - rect.x - 25);
+        shape.setAttribute("y", e.clientY - rect.y - 25);
+        shape.setAttribute("width", 50);
+        shape.setAttribute("height", 50);
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
@@ -611,7 +611,6 @@ const initDrawing = () => {
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         shape.setAttribute("preserveAspectRatio", "none");
-        svg.appendChild(shape);
 
         const stamp1Text1 = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -659,6 +658,8 @@ const initDrawing = () => {
         stamp1Text2.setAttribute("data-group-id", stamp1today.getTime());
         stamp1Text3.setAttribute("data-group-id", stamp1today.getTime());
 
+        svg.appendChild(shape);
+
         drawing = false;
         dragging = false;
         break;
@@ -677,7 +678,6 @@ const initDrawing = () => {
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         shape.setAttribute("preserveAspectRatio", "none");
-        svg.appendChild(shape);
 
         const stamp2Text1 = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -740,6 +740,8 @@ const initDrawing = () => {
         stamp2Text3.setAttribute("data-group-id", stamp2Today.getTime());
         stamp2Text4.setAttribute("data-group-id", stamp2Today.getTime());
 
+        svg.appendChild(shape);
+
         drawing = false;
         dragging = false;
         break;
@@ -761,7 +763,7 @@ const initDrawing = () => {
         case "02":
         case "01":
         case "rect":
-        case "hanko":
+        // case "hanko":
           shape.setAttribute("x", Math.min(x, startX));
           shape.setAttribute("y", Math.min(y, startY));
           shape.setAttribute("width", Math.abs(x - startX));
