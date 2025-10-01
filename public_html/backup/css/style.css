@@ -1,0 +1,32 @@
+#drawing-area {
+  width: 800px;
+  height: 800px;
+  border: 1px solid black;
+
+  & > * {
+    &:hover {
+      cursor: pointer;
+    }
+
+    &[data-selected="true"] {
+      cursor: move;
+    }
+
+    &#placeholder {
+      outline: 2px dotted orange;
+      outline-offset: 5px;
+
+      &[data-visible="selected"] {
+        outline-color: blue;
+      }
+
+      &:not([data-visible]) {
+        display: none;
+      }
+
+      &[data-moving="true"] {
+        outline-color: red;
+      }
+    }
+  }
+}

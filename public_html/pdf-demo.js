@@ -387,8 +387,9 @@ const initDrawing = () => {
         shape.textContent = "Edit Text";
         break;
       case "hanko":
-        const paths = location.href.split("/")
-        const hankoFullPath = [...paths.slice(0, paths.length -1)].join("/") + "/hanko.png";
+        const paths = location.href.split("/");
+        const hankoFullPath =
+          [...paths.slice(0, paths.length - 1)].join("/") + "/hanko.png";
         shape = document.createElementNS("http://www.w3.org/2000/svg", "image");
         shape.setAttribute("href", hankoFullPath);
         shape.setAttribute("x", startX);
@@ -398,7 +399,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
-        shape.setAttribute("preserveAspectRatio", "none")
+        shape.setAttribute("preserveAspectRatio", "none");
         break;
     }
     svg.appendChild(shape);
@@ -503,13 +504,58 @@ const loading = (visible = true) => {
 const convertSvg2Png = (svgEl, w, h) =>
   new Promise((resolve, reject) => {
     try {
-      let width = w;
-      let height = h;
+      let width = w + PADDING * 2;
+      let height = h + PADDING * 2;
       let src = "";
 
       const scale = 4;
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("height", height);
+      svg.setAttribute("width", width);
       const svgElClone = svg.appendChild(svgEl.cloneNode(true));
+
+      switch (svgElClone.localName) {
+        case "rect":
+        case "image":
+          // svgElClone.setAttribute("x", PADDING - parseFloat(svgElClone.getAttribute("stroke-width")));
+          // svgElClone.setAttribute("y", PADDING - parseFloat(svgElClone.getAttribute("stroke-width")));
+          svgElClone.setAttribute("x", PADDING);
+          svgElClone.setAttribute("y", PADDING);
+          break;
+        case "ellipse":
+          break;
+        case "line":
+          const lineX1 = parseFloat(svgElClone.getAttribute("x1"));
+          const lineX2 = parseFloat(svgElClone.getAttribute("x2"));
+          const lineY1 = parseFloat(svgElClone.getAttribute("y1"));
+          const lineY2 = parseFloat(svgElClone.getAttribute("y2"));
+          const lineW = parseFloat(svgElClone.getAttribute("width"));
+          const lineH = parseFloat(svgElClone.getAttribute("height"));
+
+          svgElClone.setAttribute(
+            "x1",
+            lineX2 > lineX1 ? PADDING : lineW + PADDING
+          );
+          svgElClone.setAttribute(
+            "y1",
+            lineY2 > lineY1 ? PADDING : lineH + PADDING
+          );
+          svgElClone.setAttribute(
+            "x2",
+            lineX2 > lineX1 ? lineW + PADDING : PADDING
+          );
+          svgElClone.setAttribute(
+            "y2",
+            lineY2 > lineY1 ? lineH + PADDING : PADDING
+          );
+          break;
+        case "text":
+          svgElClone.setAttribute("x", PADDING);
+          svgElClone.setAttribute("y", PADDING + 16);
+          break;
+        default:
+          break;
+      }
 
       if (svgElClone.localName === "image") {
         src = svgElClone.getAttribute("href");
@@ -520,8 +566,6 @@ const convertSvg2Png = (svgEl, w, h) =>
         src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
       }
 
-      svg.style.height = `${height}px`;
-      svg.style.width = `${width}px`;
 
       const img = new Image();
       img.src = src;
@@ -603,10 +647,10 @@ const saveObjectOnThePage = async () => {
           const img = document.createElement("img");
           img.src = URL.createObjectURL(blob);
           formdata.append(`widget-${index}`, blob, `widget-${index}.png`);
-          params.append(`widget-${index}-x`, x);
-          params.append(`widget-${index}-y`, y);
-          params.append(`widget-${index}-w`, width);
-          params.append(`widget-${index}-h`, height);
+          params.append(`widget-${index}-x`, x - PADDING);
+          params.append(`widget-${index}-y`, y - PADDING);
+          params.append(`widget-${index}-w`, width + PADDING * 2);
+          params.append(`widget-${index}-h`, height + PADDING * 2);
           index++;
         });
       })
