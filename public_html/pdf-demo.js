@@ -677,8 +677,6 @@ const initDrawing = () => {
 
         const lightGreenTextboxTextBox = shape.getBBox();
 
-        console.log(e.clientX, e.clientY, rect, lightGreenTextboxTextBox);
-
         shape.setAttribute(
           "x",
           e.clientX - rect.x - lightGreenTextboxTextBox.width / 2
@@ -694,7 +692,7 @@ const initDrawing = () => {
         );
         lightGreenTextboxRect.setAttribute(
           "y",
-          e.clientY - rect.x + lightGreenTextboxTextBox.height * 2
+          e.clientY - rect.y - lightGreenTextboxTextBox.height / 2
         );
         lightGreenTextboxRect.setAttribute(
           "width",
