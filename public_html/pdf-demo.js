@@ -1,6 +1,30 @@
 const PADDING = 10;
 const markerRegex = new RegExp(/\(#(.*)\)/);
 
+const CUSTOMTOOLS = [
+  { id: "c-rect", label: "四角" },
+  { id: "c-round-rect", label: "角が丸い四角" },
+  { id: "c-ellipse", label: "楕円丸" },
+  { id: "c-white-rect", label: "消すようの白四角（縁なし）" },
+  { id: "c-line", label: "直線" },
+  { id: "c-arrow", label: "矢印" },
+  { id: "c-marker", label: "マーカー機能（透過系太い直線？フリーハンド）" },
+  // { id: "c-textbox", label: "付箋：色が決まっているテキストボックス" },
+  { id: "c-textbox-aqua", label: "付箋：水色" },
+  { id: "c-textbox-light-green", label: "付箋：うす緑色" },
+  { id: "c-checkbox", label: "チェックマーク" },
+  { id: "c-mr-text", label: "様" },
+  { id: "c-double-line", label: "訂正用二重線" },
+  { id: "c-date-circle", label: "日付印" },
+  { id: "c-handed-circle", label: "手配済印" },
+  { id: "c-company-stamp", label: "社判" },
+  { id: "c-personal-stamp", label: "個人判子" },
+
+  { id: "c-fax-stamp", label: "再FAX" },
+  { id: "c-insurance", label: "保証日数" },
+  { id: "c-invoice", label: "翌月請求" },
+];
+
 const defs = `<defs>
   <!-- Circle marker -->
   <marker
@@ -306,24 +330,31 @@ const setProperties = (event) => {
       );
       break;
     case "shape-text":
-      if (selectedShape.localName !== "text")
-        return alert("ラインOBJECTを選択してください。");
+      if (selectedShape.localName !== "text") return;
       selectedShape.textContent = event.target.value;
+      if (selectedShape.hasAttribute("data-group-id")) {
+        const box = selectedShape.getBBox();
+        const groupid = selectedShape.getAttribute("data-group-id");
+        document
+          .querySelectorAll(`[data-group-id="${groupid}"][data-outer-element]`)
+          .forEach((groupElement) => {
+            if (groupElement !== selectedShape) {
+              groupElement.setAttribute("width", box.width + 10);
+            }
+          });
+      }
       break;
     case "border-radius":
-      if (selectedShape.localName !== "rect")
-        return alert("ラインOBJECTを選択してください。");
+      if (selectedShape.localName !== "rect") return;
       selectedShape.setAttribute("rx", event.target.value);
       selectedShape.setAttribute("ry", event.target.value);
       break;
     case "marker-1":
-      if (selectedShape.localName !== "line")
-        return alert("ラインOBJECTを選択してください。");
+      if (selectedShape.localName !== "line") return;
       selectedShape.setAttribute("marker-start", `url(#${event.target.value})`);
       break;
     case "marker-2":
-      if (selectedShape.localName !== "line")
-        return alert("ラインOBJECTを選択してください。");
+      if (selectedShape.localName !== "line") return;
       selectedShape.setAttribute("marker-end", `url(#${event.target.value})`);
       break;
     default:
@@ -455,7 +486,7 @@ const initDrawing = () => {
     if (currentTool === "") return;
 
     switch (currentTool) {
-      case "01":
+      case "c-rect":
       case "rect":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         shape.setAttribute("x", startX);
@@ -467,7 +498,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "2");
         svg.appendChild(shape);
         break;
-      case "02":
+      case "c-round-rect":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
@@ -480,7 +511,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "2");
         svg.appendChild(shape);
         break;
-      case "04":
+      case "c-white-rect":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
@@ -491,7 +522,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "0");
         svg.appendChild(shape);
         break;
-      case "07":
+      case "c-marker":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
@@ -502,7 +533,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "0");
         svg.appendChild(shape);
         break;
-      case "03":
+      case "c-ellipse":
       case "ellipse":
         shape = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -517,7 +548,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "2");
         svg.appendChild(shape);
         break;
-      case "05":
+      case "c-line":
       case "line":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "line");
         shape.setAttribute("x1", startX);
@@ -529,7 +560,7 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "2");
         svg.appendChild(shape);
         break;
-      case "06":
+      case "c-arrow":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "line");
         shape.setAttribute("x1", startX);
         shape.setAttribute("y1", startY);
@@ -541,7 +572,137 @@ const initDrawing = () => {
         shape.setAttribute("stroke-width", "2");
         svg.appendChild(shape);
         break;
-      case "08":
+      case "c-textbox":
+        const customTextboxId = new Date().getTime();
+
+        const textboxRect = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "rect"
+        );
+        textboxRect.setAttribute("stroke", "#000000");
+        textboxRect.setAttribute("stroke-width", "1");
+        textboxRect.setAttribute("fill", "rgba(0,255,255,1)");
+        textboxRect.setAttribute("data-group-id", customTextboxId);
+        textboxRect.setAttribute("data-outer-element", "true");
+
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        shape.textContent = "Edit Text";
+
+        shape.setAttribute("data-group-id", customTextboxId);
+
+        svg.append(textboxRect);
+        svg.appendChild(shape);
+
+        const textboxTextBox = shape.getBBox();
+        shape.setAttribute("x", e.clientX - rect.x - textboxTextBox.width / 2);
+        shape.setAttribute("y", e.clientY - rect.y + textboxTextBox.height / 2);
+
+        textboxRect.setAttribute(
+          "x",
+          e.clientX - rect.x - textboxTextBox.width / 2 - 5
+        );
+        textboxRect.setAttribute(
+          "y",
+          e.clientY - rect.x + textboxTextBox.height * 2
+        );
+        textboxRect.setAttribute("width", textboxTextBox.width + 10);
+        textboxRect.setAttribute("height", textboxTextBox.height + 10);
+
+        break;
+      case "c-textbox-aqua":
+        const customAquaTextboxId = new Date().getTime();
+
+        const aquaTextboxRect = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "rect"
+        );
+        aquaTextboxRect.setAttribute("stroke", "#000000");
+        aquaTextboxRect.setAttribute("stroke-width", "1");
+        aquaTextboxRect.setAttribute("fill", "rgba(0,255,255,1)");
+        aquaTextboxRect.setAttribute("data-group-id", customAquaTextboxId);
+        aquaTextboxRect.setAttribute("data-outer-element", "true");
+
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        shape.textContent = "Edit Text";
+
+        shape.setAttribute("data-group-id", customAquaTextboxId);
+
+        svg.append(aquaTextboxRect);
+        svg.appendChild(shape);
+
+        const aquaTextboxTextBox = shape.getBBox();
+        shape.setAttribute(
+          "x",
+          e.clientX - rect.x - aquaTextboxTextBox.width / 2
+        );
+        shape.setAttribute(
+          "y",
+          e.clientY - rect.y + aquaTextboxTextBox.height / 2
+        );
+
+        aquaTextboxRect.setAttribute(
+          "x",
+          e.clientX - rect.x - aquaTextboxTextBox.width / 2 - 5
+        );
+        aquaTextboxRect.setAttribute(
+          "y",
+          e.clientY - rect.x + aquaTextboxTextBox.height * 2
+        );
+        aquaTextboxRect.setAttribute("width", aquaTextboxTextBox.width + 10);
+        aquaTextboxRect.setAttribute("height", aquaTextboxTextBox.height + 10);
+
+        break;
+      case "c-textbox-light-green":
+        const lightGreenCustomTextboxId = new Date().getTime();
+
+        const lightGreenTextboxRect = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "rect"
+        );
+        lightGreenTextboxRect.setAttribute("stroke", "#000000");
+        lightGreenTextboxRect.setAttribute("stroke-width", "1");
+        lightGreenTextboxRect.setAttribute("fill", "rgba(100,227,161,1)");
+        lightGreenTextboxRect.setAttribute(
+          "data-group-id",
+          lightGreenCustomTextboxId
+        );
+        lightGreenTextboxRect.setAttribute("data-outer-element", "true");
+
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        shape.textContent = "Edit Text";
+        shape.setAttribute("data-group-id", lightGreenCustomTextboxId);
+
+        svg.append(lightGreenTextboxRect);
+        svg.appendChild(shape);
+
+        const lightGreenTextboxTextBox = shape.getBBox();
+        shape.setAttribute(
+          "x",
+          e.clientX - rect.x - lightGreenTextboxTextBox.width / 2
+        );
+        shape.setAttribute(
+          "y",
+          e.clientY - rect.y + lightGreenTextboxTextBox.height / 2
+        );
+
+        lightGreenTextboxRect.setAttribute(
+          "x",
+          e.clientX - rect.x - lightGreenTextboxTextBox.width / 2 - 5
+        );
+        lightGreenTextboxRect.setAttribute(
+          "y",
+          e.clientY - rect.x + lightGreenTextboxTextBox.height * 2
+        );
+        lightGreenTextboxRect.setAttribute(
+          "width",
+          lightGreenTextboxTextBox.width + 10
+        );
+        lightGreenTextboxRect.setAttribute(
+          "height",
+          lightGreenTextboxTextBox.height + 10
+        );
+
+        break;
       case "text":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
         shape.setAttribute("x", e.clientX - rect.x);
@@ -549,14 +710,14 @@ const initDrawing = () => {
         shape.textContent = "Edit Text";
         svg.appendChild(shape);
         break;
-      case "10":
+      case "c-mr-text":
         shape = document.createElementNS("http://www.w3.org/2000/svg", "text");
         shape.setAttribute("x", e.clientX - rect.x);
         shape.setAttribute("y", e.clientY - rect.y);
         shape.textContent = "様";
         svg.appendChild(shape);
         break;
-      case "14":
+      case "c-company-stamp":
       case "hanko":
         const hankoPath = location.href.split("/");
         const hankoFullPath =
@@ -574,7 +735,7 @@ const initDrawing = () => {
         shape.setAttribute("preserveAspectRatio", "none");
         svg.appendChild(shape);
         break;
-      case "09":
+      case "c-checkbox":
         const checkboxPath = location.href.split("/");
         const checkboxFullPath =
           [...checkboxPath.slice(0, checkboxPath.length - 1)].join("/") +
@@ -583,15 +744,15 @@ const initDrawing = () => {
         shape.setAttribute("href", checkboxFullPath);
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
-        shape.setAttribute("width", 0);
-        shape.setAttribute("height", 0);
+        shape.setAttribute("width", 30);
+        shape.setAttribute("height", 30);
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         shape.setAttribute("preserveAspectRatio", "none");
         svg.appendChild(shape);
         break;
-      case "11":
+      case "c-double-line":
         const doubleLinePath = location.href.split("/");
         const doubleLineFullPath =
           [...doubleLinePath.slice(0, doubleLinePath.length - 1)].join("/") +
@@ -601,14 +762,14 @@ const initDrawing = () => {
         shape.setAttribute("x", startX);
         shape.setAttribute("y", startY);
         shape.setAttribute("width", 0);
-        shape.setAttribute("height", 0);
+        shape.setAttribute("height", 20);
         shape.setAttribute("stroke", "black");
         shape.setAttribute("fill", "rgba(0,0,0,0)");
         shape.setAttribute("stroke-width", "2");
         shape.setAttribute("preserveAspectRatio", "none");
         svg.appendChild(shape);
         break;
-      case "12":
+      case "c-date-circle":
         const stamp1LinePath = location.href.split("/");
         const stamp1LineFullPath =
           [...stamp1LinePath.slice(0, stamp1LinePath.length - 1)].join("/") +
@@ -657,6 +818,7 @@ const initDrawing = () => {
           "text"
         );
         svg.append(stamp1Text3);
+        stamp1Text3.setAttribute("font-size", 12);
         stamp1Text3.textContent = document.getElementById("stamp-comp").value;
         const stamp1Box3 = stamp1Text3.getBBox();
         stamp1Text3.setAttribute(
@@ -675,7 +837,7 @@ const initDrawing = () => {
         drawing = false;
         dragging = false;
         break;
-      case "13":
+      case "c-handed-circle":
         const stamp2LinePath = location.href.split("/");
         const stamp2LineFullPath =
           [...stamp2LinePath.slice(0, stamp2LinePath.length - 1)].join("/") +
@@ -723,6 +885,7 @@ const initDrawing = () => {
           "text"
         );
         svg.append(stamp2Text3);
+        stamp2Text3.setAttribute("font-size", 12);
         stamp2Text3.textContent = document.getElementById("stamp-comp").value;
         const stamp2Box3 = stamp2Text3.getBBox();
         stamp2Text3.setAttribute(
@@ -757,7 +920,7 @@ const initDrawing = () => {
         dragging = false;
         break;
 
-      case "15":
+      case "c-personal-stamp":
         const kojinHankoColor = "#9C2007";
         const kojinHankoRadius = 25;
         const kojinHankoStrokeWidth = 2;
@@ -812,6 +975,189 @@ const initDrawing = () => {
 
         svg.appendChild(shape);
         break;
+
+      case "c-fax-stamp":
+        const faxHankoColor = "#000000";
+        const faxHankoRadius = 25;
+        const faxHankoStrokeWidth = 2;
+
+        const faxHankoNow = new Date();
+        const faxHankoToday = faxHankoNow.getTime();
+
+        shape = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "ellipse"
+        );
+        shape.setAttribute("stroke", faxHankoColor);
+        shape.setAttribute("stroke-width", faxHankoStrokeWidth);
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("cx", e.clientX - rect.x);
+        shape.setAttribute("cy", e.clientY - rect.y);
+        shape.setAttribute("rx", faxHankoRadius);
+        shape.setAttribute("ry", faxHankoRadius);
+        shape.setAttribute("data-group-id", faxHankoToday);
+
+        const faxHankoText1 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        faxHankoText1.textContent = "再FAX";
+        faxHankoText1.setAttribute("fill", faxHankoColor);
+        faxHankoText1.setAttribute("data-group-id", faxHankoToday);
+        faxHankoText1.setAttribute("font-size", 12);
+
+        const faxHankoText2 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        faxHankoText2.textContent = `${
+          faxHankoNow.getMonth() + 1
+        }/${faxHankoNow.getDate()}`;
+        faxHankoText2.setAttribute("fill", faxHankoColor);
+        faxHankoText2.setAttribute("data-group-id", faxHankoToday);
+        faxHankoText2.setAttribute("font-size", 12);
+
+        const faxHankoText3 = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        faxHankoText3.textContent = `${faxHankoNow.getHours()}:${faxHankoNow.getMinutes()}`;
+        faxHankoText3.setAttribute("fill", faxHankoColor);
+        faxHankoText3.setAttribute("data-group-id", faxHankoToday);
+        faxHankoText3.setAttribute("font-size", 12);
+
+        svg.append(faxHankoText1);
+        svg.append(faxHankoText2);
+        svg.append(faxHankoText3);
+
+        const faxHankoBox1 = faxHankoText1.getBBox();
+        const faxHankoBox2 = faxHankoText2.getBBox();
+        const faxHankoBox3 = faxHankoText3.getBBox();
+
+        let faxHankoText1X, faxHankoText1Y;
+        faxHankoText1X = e.clientX - rect.x - faxHankoBox1.width / 2;
+        faxHankoText1Y = e.clientY - rect.y - faxHankoBox1.height / 2;
+
+        faxHankoText1.setAttribute("x", faxHankoText1X);
+        faxHankoText1.setAttribute("y", faxHankoText1Y);
+
+        faxHankoText2.setAttribute(
+          "x",
+          e.clientX - rect.x - faxHankoBox2.width / 2
+        );
+        faxHankoText2.setAttribute(
+          "y",
+          e.clientY - rect.y + faxHankoBox2.height / 2
+        );
+
+        faxHankoText3.setAttribute(
+          "x",
+          e.clientX - rect.x - faxHankoBox3.width / 2
+        );
+        faxHankoText3.setAttribute(
+          "y",
+          e.clientY - rect.y + faxHankoBox2.height * 1.25
+        );
+
+        svg.appendChild(shape);
+        break;
+
+      case "c-insurance":
+        const insuranceTextToday = new Date();
+
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+        shape.setAttribute("rx", 10);
+        shape.setAttribute("ry", 10);
+
+        shape.setAttribute("stroke", "#00ff00");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+
+        const insuranceText = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        insuranceText.textContent = `${insuranceTextToday.getFullYear()}-${String(
+          insuranceTextToday.getMonth() + 1
+        ).padStart(2, "0")}-${String(insuranceTextToday.getDate() + 1).padStart(
+          2,
+          "0"
+        )} 日保証`;
+        insuranceText.setAttribute("fill", "#00ff00");
+        insuranceText.setAttribute(
+          "data-group-id",
+          insuranceTextToday.getTime()
+        );
+
+        svg.append(insuranceText);
+
+        const insuranceTextBox = insuranceText.getBBox();
+
+        insuranceText.setAttribute(
+          "x",
+          e.clientX - rect.x - insuranceTextBox.width / 2
+        );
+        insuranceText.setAttribute(
+          "y",
+          e.clientY - rect.y + insuranceTextBox.height / 2
+        );
+
+        shape.setAttribute(
+          "x",
+          e.clientX - rect.x - insuranceTextBox.width / 2 - 5
+        );
+        shape.setAttribute(
+          "y",
+          e.clientY - rect.y - insuranceTextBox.height / 2
+        );
+        shape.setAttribute("width", insuranceTextBox.width + 10);
+        shape.setAttribute("height", insuranceTextBox.height + 10);
+        shape.setAttribute("data-group-id", insuranceTextToday.getTime());
+
+        svg.appendChild(shape);
+        break;
+      case "c-invoice":
+        const invoiceTextToday = new Date();
+
+        shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+        shape.setAttribute("stroke", "#ff0000");
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("stroke-width", "2");
+
+        const invoiceText = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        invoiceText.textContent = `翌月請求`;
+        invoiceText.setAttribute("fill", "#ff0000");
+        invoiceText.setAttribute("data-group-id", invoiceTextToday.getTime());
+
+        svg.append(invoiceText);
+
+        const invoiceTextBox = invoiceText.getBBox();
+
+        invoiceText.setAttribute(
+          "x",
+          e.clientX - rect.x - invoiceTextBox.width / 2
+        );
+        invoiceText.setAttribute(
+          "y",
+          e.clientY - rect.y + invoiceTextBox.height / 2
+        );
+
+        shape.setAttribute(
+          "x",
+          e.clientX - rect.x - invoiceTextBox.width / 2 - 5
+        );
+        shape.setAttribute("y", e.clientY - rect.y - invoiceTextBox.height / 2);
+        shape.setAttribute("width", invoiceTextBox.width + 10);
+        shape.setAttribute("height", invoiceTextBox.height + 10);
+        shape.setAttribute("data-group-id", invoiceTextToday.getTime());
+
+        svg.appendChild(shape);
+        break;
     }
   });
 
@@ -822,13 +1168,12 @@ const initDrawing = () => {
 
     if (drawing) {
       switch (currentTool) {
-        case "14":
-        case "11":
-        case "09":
-        case "07":
-        case "04":
-        case "02":
-        case "01":
+        case "c-company-stamp":
+        // case "c-checkbox":
+        case "c-marker":
+        case "c-white-rect":
+        case "c-round-rect":
+        case "c-rect":
         case "rect":
           // case "hanko":
           shape.setAttribute("x", Math.min(x, startX));
@@ -836,7 +1181,11 @@ const initDrawing = () => {
           shape.setAttribute("width", Math.abs(x - startX));
           shape.setAttribute("height", Math.abs(y - startY));
           break;
-        case "03":
+        case "c-double-line":
+          shape.setAttribute("x", Math.min(x, startX));
+          shape.setAttribute("width", Math.abs(x - startX));
+          break;
+        case "c-ellipse":
         case "ellipse":
           shape.setAttribute("cx", (x + startX) / 2);
           shape.setAttribute("cy", (y + startY) / 2);
@@ -844,8 +1193,8 @@ const initDrawing = () => {
           shape.setAttribute("ry", Math.abs(y - startY) / 2);
           break;
 
-        case "06":
-        case "05":
+        case "c-arrow":
+        case "c-line":
         case "line":
           shape.setAttribute("x2", x);
           shape.setAttribute("y2", y);
@@ -1181,6 +1530,15 @@ const loadImage = async (url = []) => {
 function handleChangeTools(event) {}
 
 document.addEventListener("DOMContentLoaded", () => {
-  getPdfList();
-  initDrawing();
+  const customerTools = document.getElementById("custom-tools");
+  if (customerTools) {
+    CUSTOMTOOLS.forEach((tool, key) => {
+      const option = document.createElement("option");
+      option.value = tool.id;
+      option.textContent = `${key + 1} - ${tool.label}`;
+      customerTools.append(option);
+    });
+    getPdfList();
+    initDrawing();
+  }
 });

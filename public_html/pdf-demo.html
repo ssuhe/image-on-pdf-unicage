@@ -6,15 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pdf-Demo</title>
 
-    <link rel="stylesheet" href="./pdf-demo.css?v=20251002-1340" />
-    <script src="./pdf-demo.js?v=20251002-1340"></script>
+    <link rel="stylesheet" href="./pdf-demo.css?v=20251002-1551" />
+    <script src="./pdf-demo.js?v=20251002-1551"></script>
   </head>
   <body>
     <div>
       <input id="stamp-head" type="text" value="手配済" />
       <input id="stamp-name" type="text" value="井上" />
       <input id="stamp-date" type="text" value="'25.06.25" />
-      <input id="stamp-comp" type="text" value="共栄機工" />
+      <input id="stamp-comp" type="text" value="共栄機工(株)" />
     </div>
 
     <form id="FORM">
@@ -107,25 +107,8 @@
           <button onclick="setTool('text')">テキスト</button>
 
           <label style="margin-left: 5rem">DEFAULT OBJECT</label>
-          <select onchange="setTool(event.target.value)">
+          <select id="custom-tools" onchange="setTool(event.target.value)">
             <option value="">None</option>
-            <option value="01">①四角</option>
-            <option value="02">②角が丸い四角</option>
-            <option value="03">③楕円丸</option>
-            <option value="04">④消すようの白四角（縁なし）</option>
-            <option value="05">⑤直線</option>
-            <option value="06">⑥矢印</option>
-            <option value="07">
-              ⑦マーカー機能（透過系太い直線？フリーハンド）
-            </option>
-            <option value="08">⑧付箋：色が決まっているテキストボックス</option>
-            <option value="09">⑨チェックマーク</option>
-            <option value="10">⑩様</option>
-            <option value="11">⑪訂正用二重線</option>
-            <option value="12">⑫日付印</option>
-            <option value="13">⑬手配済印</option>
-            <option value="14">社判</option>
-            <option value="15">個人判子</option>
           </select>
         </div>
       </div>
