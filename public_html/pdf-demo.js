@@ -676,6 +676,9 @@ const initDrawing = () => {
         svg.appendChild(shape);
 
         const lightGreenTextboxTextBox = shape.getBBox();
+
+        console.log(e.clientX, e.clientY, rect, lightGreenTextboxTextBox);
+
         shape.setAttribute(
           "x",
           e.clientX - rect.x - lightGreenTextboxTextBox.width / 2
