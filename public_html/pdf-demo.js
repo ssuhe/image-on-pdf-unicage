@@ -269,10 +269,22 @@ const setProperties = (event) => {
       break;
     case "border-width":
       selectedShape.setAttribute("stroke-width", event.target.value);
+
       break;
     case "border-color":
-      console.log(event.target.value);
       selectedShape.setAttribute("stroke", event.target.value);
+      if (selectedShape.localName === "ellipse") {
+        if (selectedShape.hasAttribute("data-group-id")) {
+          const groupid = selectedShape.getAttribute("data-group-id");
+          document
+            .querySelectorAll(`[data-group-id="${groupid}"]`)
+            .forEach((e) => {
+              if (e !== selectedShape) {
+                e.setAttribute("fill", event.target.value);
+              }
+            });
+        }
+      }
       break;
     case "background-color":
       selectedShape.setAttribute(
@@ -731,8 +743,7 @@ const initDrawing = () => {
           e.clientX - rect.x - stamp2Box4.width / 2
         );
         stamp2Text4.setAttribute("y", e.clientY - rect.y + 45);
-        stamp2Text4.setAttribute("font-size", 12)
-        
+        stamp2Text4.setAttribute("font-size", 12);
 
         shape.setAttribute("data-group-id", stamp2Today.getTime());
         stamp2Text1.setAttribute("data-group-id", stamp2Today.getTime());
@@ -744,6 +755,62 @@ const initDrawing = () => {
 
         drawing = false;
         dragging = false;
+        break;
+
+      case "15":
+        const kojinHankoColor = "#9C2007";
+        const kojinHankoRadius = 25;
+        const kojinHankoStrokeWidth = 2;
+
+        const kojinHankoToday = new Date().getTime();
+
+        shape = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "ellipse"
+        );
+        shape.setAttribute("stroke", kojinHankoColor);
+        shape.setAttribute("stroke-width", kojinHankoStrokeWidth);
+        shape.setAttribute("fill", "rgba(0,0,0,0)");
+        shape.setAttribute("cx", e.clientX - rect.x);
+        shape.setAttribute("cy", e.clientY - rect.y);
+        shape.setAttribute("rx", kojinHankoRadius);
+        shape.setAttribute("ry", kojinHankoRadius);
+        shape.setAttribute("data-group-id", kojinHankoToday);
+
+        const kojinHankoText = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "text"
+        );
+        kojinHankoText.setAttribute(
+          "style",
+          "writing-mode: vertical-rl; text-orientation: upright;"
+        );
+        kojinHankoText.textContent =
+          document.getElementById("stamp-name").value;
+        kojinHankoText.setAttribute("fill", kojinHankoColor);
+        kojinHankoText.setAttribute("data-group-id", kojinHankoToday);
+
+        svg.append(kojinHankoText);
+        const kojinHankoBox = kojinHankoText.getBBox();
+
+        let kojinHankoTextX, kojinHankoTextY;
+        kojinHankoTextX = e.clientX - rect.x;
+
+        if (kojinHankoBox.height <= kojinHankoRadius * 2 * 0.9) {
+          kojinHankoTextY = e.clientY - rect.y - kojinHankoBox.height / 2;
+        } else {
+          const fontSize =
+            (kojinHankoRadius * 2 * 0.9) /
+            kojinHankoText.textContent.trim().length;
+          kojinHankoText.setAttribute("font-size", fontSize);
+          kojinHankoTextY =
+            e.clientY - rect.y - kojinHankoText.getBBox().height / 2;
+        }
+
+        kojinHankoText.setAttribute("x", kojinHankoTextX);
+        kojinHankoText.setAttribute("y", kojinHankoTextY);
+
+        svg.appendChild(shape);
         break;
     }
   });
@@ -763,7 +830,7 @@ const initDrawing = () => {
         case "02":
         case "01":
         case "rect":
-        // case "hanko":
+          // case "hanko":
           shape.setAttribute("x", Math.min(x, startX));
           shape.setAttribute("y", Math.min(y, startY));
           shape.setAttribute("width", Math.abs(x - startX));
@@ -830,6 +897,24 @@ const initDrawing = () => {
             "cy",
             +selectedShape.getAttribute("cy") + dy
           );
+
+          if (selectedShape.hasAttribute("data-group-id")) {
+            const groupid = selectedShape.getAttribute("data-group-id");
+            svg
+              .querySelectorAll(`[data-group-id="${groupid}"]`)
+              .forEach((groupElement) => {
+                if (groupElement !== selectedShape) {
+                  groupElement.setAttribute(
+                    "x",
+                    Number(groupElement.getAttribute("x")) + dx
+                  );
+                  groupElement.setAttribute(
+                    "y",
+                    Number(groupElement.getAttribute("y")) + dy
+                  );
+                }
+              });
+          }
           break;
         case "line":
           selectedShape.setAttribute(
