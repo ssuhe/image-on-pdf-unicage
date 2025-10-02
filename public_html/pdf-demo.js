@@ -646,7 +646,7 @@ const initDrawing = () => {
         );
         aquaTextboxRect.setAttribute(
           "y",
-          e.clientY - rect.y + aquaTextboxTextBox.height * 2
+          e.clientY - rect.y - aquaTextboxTextBox.height / 2
         );
         aquaTextboxRect.setAttribute("width", aquaTextboxTextBox.width + 10);
         aquaTextboxRect.setAttribute("height", aquaTextboxTextBox.height + 10);
